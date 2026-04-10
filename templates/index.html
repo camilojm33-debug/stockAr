@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>stockAr</title>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+body {
+    font-family: Arial;
+    background: #0f172a;
+    color: white;
+    text-align: center;
+}
+
+.container {
+    max-width: 600px;
+    margin: auto;
+}
+
+#reader {
+    width: 300px;
+    margin: auto;
+}
+
+input, button {
+    padding: 10px;
+    margin: 5px;
+}
+
+button {
+    background: #22c55e;
+    border: none;
+    color: white;
+    cursor: pointer;
+}
+
+.card {
+    background: #1e293b;
+    padding: 10px;
+    margin: 5px;
+    border-radius: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>📦 stockAr</h1>
+
+<h3>📊 Dashboard</h3>
+<p>Total productos: {{ total_productos }}</p>
+<p>Total stock: {{ total_stock }}</p>
+
+<h3>📷 Escanear</h3>
+<div id="reader"></div>
+<p id="estado">Esperando escaneo...</p>
+
+<h3>➕ Agregar manual</h3>
+<form method="POST">
+<input name="codigo" placeholder="Código">
+<input name="nombre" placeholder="Nombre">
+<input name="cantidad" type="number" required>
+<button>Agregar</button>
+</form>
+
+<h3>📦 Lista</h3>
+
+{% for p in productos %}
+<div class="card">
+    {{ p[2] }} - {{ p[3] }}
+    <br>
+    <a href="/editar/{{ p[0] }}">✏️</a>
+    <a href="/eliminar/{{ p[0] }}">❌</a>
+</div>
+{% endfor %}
+
+<br>
+<a href="/ticket">🧾 Ver Ticket</a>
+
+</div>
+
+<audio id="beep" src="https://www.soundjay.com/button/beep-07.wav"></audio>
+
+<script>
+let last = "";
+
+function onScanSuccess(code) {
+    if (code !== last) {
+        last = code;
+
+        document.getElementById("beep").play();
+        document.getElementById("estado").innerText = "Escaneado: " + code;
+
+        fetch("/scan", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({codigo: code})
+        }).then(() => setTimeout(() => location.reload(), 500));
+    }
+}
+
+new Html5QrcodeScanner("reader", {fps: 10, qrbox: 250})
+.render(onScanSuccess);
+</script>
+
+</body>
+</html>

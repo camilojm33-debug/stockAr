@@ -5,7 +5,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.secret_key = "stockar_secret"
 
-# DB
 def get_db():
     conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
@@ -32,12 +31,10 @@ def init_db():
     )
     """)
 
-    # 🔥 ADMIN GARANTIZADO
+    # ADMIN SIEMPRE EXISTE
     password_hash = generate_password_hash("1234")
 
-    user = conn.execute(
-        "SELECT * FROM usuarios WHERE username='admin'"
-    ).fetchone()
+    user = conn.execute("SELECT * FROM usuarios WHERE username='admin'").fetchone()
 
     if not user:
         conn.execute(
@@ -55,7 +52,6 @@ def init_db():
 
 init_db()
 
-# LOGIN
 @app.route("/login", methods=["GET","POST"])
 def login():
     if request.method == "POST":
@@ -73,11 +69,10 @@ def login():
             session["user_id"] = user["id"]
             return redirect("/")
         else:
-            return "Usuario o contraseña incorrectos"
+            return "Usuario incorrecto"
 
     return render_template("login.html")
 
-# REGISTER
 @app.route("/register", methods=["GET","POST"])
 def register():
     if request.method == "POST":
@@ -98,13 +93,11 @@ def register():
 
     return render_template("register.html")
 
-# LOGOUT
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/login")
 
-# HOME
 @app.route("/")
 def index():
     if "user_id" not in session:
@@ -119,12 +112,8 @@ def index():
 
     return render_template("index.html", productos=productos)
 
-# AGREGAR
 @app.route("/agregar", methods=["POST"])
 def agregar():
-    if "user_id" not in session:
-        return redirect("/login")
-
     codigo = request.form["codigo"]
     nombre = request.form["nombre"]
     cantidad = int(request.form["cantidad"])
@@ -152,12 +141,8 @@ def agregar():
 
     return redirect("/")
 
-# SUMAR
 @app.route("/sumar/<codigo>")
 def sumar(codigo):
-    if "user_id" not in session:
-        return redirect("/login")
-
     conn = get_db()
     conn.execute(
         "UPDATE productos SET cantidad = cantidad + 1 WHERE codigo=? AND user_id=?",
@@ -167,12 +152,8 @@ def sumar(codigo):
     conn.close()
     return redirect("/")
 
-# RESTAR
 @app.route("/restar/<codigo>")
 def restar(codigo):
-    if "user_id" not in session:
-        return redirect("/login")
-
     conn = get_db()
     conn.execute(
         "UPDATE productos SET cantidad = CASE WHEN cantidad > 0 THEN cantidad - 1 ELSE 0 END WHERE codigo=? AND user_id=?",

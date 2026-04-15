@@ -1,31 +1,95 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+<meta charset="UTF-8">
 <title>stockAr</title>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+body {
+    background: linear-gradient(135deg,#020617,#0f172a);
+    color:white;
+    font-family: Arial;
+    text-align:center;
+}
+
+.card {
+    background:#1e293b;
+    margin:10px auto;
+    padding:15px;
+    border-radius:15px;
+    width:300px;
+}
+
+button { padding:10px; margin:5px; }
+</style>
 </head>
-<body style="background:#020617;color:white;font-family:Arial;">
+
+<body>
 
 <h2>📦 stockAr</h2>
 <a href="/logout">Cerrar sesión</a>
 
-<h3>Agregar producto</h3>
+<div class="card">
+<h3>📷 Escanear</h3>
+<div id="reader"></div>
+</div>
+
+<div class="card">
+<h3>➕ Agregar</h3>
 <form action="/agregar" method="POST">
 <input name="codigo" placeholder="Código"><br>
 <input name="nombre" placeholder="Nombre"><br>
 <input name="cantidad" type="number" placeholder="Cantidad"><br>
 <button>Agregar</button>
 </form>
+</div>
 
-<h3>Inventario</h3>
+<div class="card">
+<h3>📋 Inventario</h3>
+
+<button onclick="imprimirTodo()">🧾 Imprimir etiquetas</button>
 
 {% for p in productos %}
 <div>
 <b>{{p.nombre}}</b> ({{p.cantidad}})
 <br>
-<a href="/sumar/{{p.codigo}}">➕</a>
-<a href="/restar/{{p.codigo}}">➖</a>
+<a href="/sumar/{{p.codigo}}"><button>+</button></a>
+<a href="/restar/{{p.codigo}}"><button>-</button></a>
+<button onclick="generarQR('{{p.codigo}}')">QR</button>
 </div>
 {% endfor %}
+
+</div>
+
+<div id="qrcode"></div>
+
+<script>
+let scanner = new Html5QrcodeScanner("reader",{fps:10,qrbox:250});
+scanner.render(function(code){
+    let a = prompt("1 vender | 2 agregar");
+    if(a=="1") location="/restar/"+code;
+    else if(a=="2") location="/?nuevo="+code;
+});
+
+function generarQR(codigo){
+    document.getElementById("qrcode").innerHTML="";
+    new QRCode(document.getElementById("qrcode"), codigo);
+}
+
+function imprimirTodo(){
+    let productos = {{ productos | tojson }};
+    let html="";
+    productos.forEach(p=>{
+        html+=`<div>${p.nombre}<br>${p.codigo}</div>`;
+    });
+    let w=window.open();
+    w.document.write(html);
+    w.print();
+}
+</script>
 
 </body>
 </html>

@@ -5,33 +5,54 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.secret_key = "stockar_secret"
 
+
 def get_db():
     conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
     return conn
 
+
 def init_db():
     conn = get_db()
 
     conn.execute("""
-    CREATE TABLE IF NOT EXISTS usuarios (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE,
-        password TEXT
-    )
-    """)
+                 CREATE TABLE IF NOT EXISTS usuarios
+                 (
+                     id
+                     INTEGER
+                     PRIMARY
+                     KEY
+                     AUTOINCREMENT,
+                     username
+                     TEXT
+                     UNIQUE,
+                     password
+                     TEXT
+                 )
+                 """)
 
     conn.execute("""
-    CREATE TABLE IF NOT EXISTS productos (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        codigo TEXT,
-        nombre TEXT,
-        cantidad INTEGER,
-        user_id INTEGER
-    )
-    """)
+                 CREATE TABLE IF NOT EXISTS productos
+                 (
+                     id
+                     INTEGER
+                     PRIMARY
+                     KEY
+                     AUTOINCREMENT,
+                     codigo
+                     TEXT,
+                     nombre
+                     TEXT,
+                     cantidad
+                     INTEGER,
+                     precio
+                     REAL,
+                     user_id
+                     INTEGER
+                 )
+                 """)
 
-    # ADMIN SIEMPRE EXISTE
+    # ADMIN SIEMPRE
     password_hash = generate_password_hash("1234")
 
     user = conn.execute("SELECT * FROM usuarios WHERE username='admin'").fetchone()
@@ -50,9 +71,11 @@ def init_db():
     conn.commit()
     conn.close()
 
+
 init_db()
 
-@app.route("/login", methods=["GET","POST"])
+
+@app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         username = request.form["username"]
@@ -73,7 +96,8 @@ def login():
 
     return render_template("login.html")
 
-@app.route("/register", methods=["GET","POST"])
+
+@app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
         username = request.form["username"]
@@ -93,10 +117,12 @@ def register():
 
     return render_template("register.html")
 
+
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/login")
+
 
 @app.route("/")
 def index():
@@ -112,11 +138,13 @@ def index():
 
     return render_template("index.html", productos=productos)
 
+
 @app.route("/agregar", methods=["POST"])
 def agregar():
     codigo = request.form["codigo"]
     nombre = request.form["nombre"]
     cantidad = int(request.form["cantidad"])
+    precio = float(request.form["precio"])
 
     conn = get_db()
 
@@ -127,19 +155,20 @@ def agregar():
 
     if existente:
         conn.execute(
-            "UPDATE productos SET cantidad = cantidad + ? WHERE codigo=? AND user_id=?",
-            (cantidad, codigo, session["user_id"])
+            "UPDATE productos SET cantidad = cantidad + ?, precio=? WHERE codigo=? AND user_id=?",
+            (cantidad, precio, codigo, session["user_id"])
         )
     else:
         conn.execute(
-            "INSERT INTO productos (codigo,nombre,cantidad,user_id) VALUES (?,?,?,?)",
-            (codigo, nombre, cantidad, session["user_id"])
+            "INSERT INTO productos (codigo,nombre,cantidad,precio,user_id) VALUES (?,?,?,?,?)",
+            (codigo, nombre, cantidad, precio, session["user_id"])
         )
 
     conn.commit()
     conn.close()
 
     return redirect("/")
+
 
 @app.route("/sumar/<codigo>")
 def sumar(codigo):
@@ -152,6 +181,7 @@ def sumar(codigo):
     conn.close()
     return redirect("/")
 
+
 @app.route("/restar/<codigo>")
 def restar(codigo):
     conn = get_db()
@@ -162,6 +192,7 @@ def restar(codigo):
     conn.commit()
     conn.close()
     return redirect("/")
+
 
 if __name__ == "__main__":
     app.run(debug=True)

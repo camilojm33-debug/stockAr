@@ -1,81 +1,24 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>stockAr</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <style>
-body {
-    margin:0;
-    font-family: 'Segoe UI', sans-serif;
-    background: linear-gradient(135deg,#020617,#0f172a);
-    color:white;
-}
-
-/* CONTENEDOR */
-.container {
-    max-width: 400px;
-    margin:auto;
-    padding:20px;
-}
-
-/* CARD */
-.card {
-    background:#1e293b;
-    border-radius:15px;
-    padding:15px;
-    margin-bottom:15px;
-    box-shadow:0 5px 15px rgba(0,0,0,0.4);
-}
-
-/* INPUT */
-input {
-    width:100%;
-    padding:10px;
-    margin-top:5px;
-    border-radius:8px;
-    border:none;
-    background:#334155;
-    color:white;
-}
-
-/* BOTONES */
-button {
-    border:none;
-    border-radius:10px;
-    padding:10px;
-    margin-top:10px;
-    cursor:pointer;
-    font-weight:bold;
-}
-
-.btn-add { background:#22c55e; }
-.btn-sum { background:#3b82f6; }
-.btn-sell { background:#ef4444; }
-.btn-ticket { background:#f59e0b; }
-.btn-qr { background:#a855f7; }
-
-/* ITEM */
-.item {
-    background:#334155;
-    padding:10px;
-    border-radius:10px;
-    margin-top:10px;
-}
-
-/* TITULO */
-h2 {
-    text-align:center;
-}
+body {background:#020617;color:white;font-family:Arial;text-align:center;}
+.card {background:#1e293b;padding:15px;margin:10px;border-radius:10px;}
+button {padding:10px;margin:5px;border:none;border-radius:8px;font-weight:bold;}
+.btn-add{background:#22c55e;}
+.btn-sum{background:#3b82f6;}
+.btn-sell{background:#ef4444;}
+.btn-ticket{background:#f59e0b;}
+.item{background:#334155;padding:10px;margin-top:10px;border-radius:10px;}
 </style>
 </head>
 
 <body>
-
-<div class="container">
 
 <h2>📦 stockAr</h2>
 <a href="/logout">Cerrar sesión</a>
@@ -86,80 +29,69 @@ h2 {
 </div>
 
 <div class="card">
-<h3>➕ Agregar producto</h3>
+<h3>➕ Producto</h3>
 <form action="/agregar" method="POST">
-<input name="codigo" placeholder="Código">
-<input name="nombre" placeholder="Nombre">
-<input name="cantidad" type="number" placeholder="Cantidad">
+<input name="codigo" placeholder="Código"><br>
+<input name="nombre" placeholder="Nombre"><br>
+<input name="cantidad" type="number" placeholder="Cantidad"><br>
+<input name="precio" type="number" placeholder="Precio"><br>
 <button class="btn-add">Agregar</button>
 </form>
 </div>
 
 <div class="card">
 <h3>📋 Inventario</h3>
-
-<button class="btn-ticket" onclick="imprimirTicket()">🎟 Generar Ticket</button>
+<button class="btn-ticket" onclick="ticket()">🎟 Ticket</button>
 
 {% for p in productos %}
 <div class="item">
-<b>{{p.nombre}}</b> ({{p.cantidad}})
+<b>{{p.nombre}}</b><br>
+Stock: {{p.cantidad}}<br>
+$ {{p.precio}}
 
 <br>
 
-<a href="/sumar/{{p.codigo}}">
-<button class="btn-sum">+</button>
-</a>
-
-<a href="/restar/{{p.codigo}}">
-<button class="btn-sell">-</button>
-</a>
-
-<button class="btn-qr" onclick="generarQR('{{p.codigo}}')">QR</button>
-
+<a href="/sumar/{{p.codigo}}"><button class="btn-sum">+</button></a>
+<button class="btn-sell" onclick="vender('{{p.codigo}}','{{p.nombre}}',{{p.precio}})">Vender</button>
+<button onclick="qr('{{p.codigo}}')">QR</button>
 </div>
 {% endfor %}
 </div>
 
 <div id="qrcode"></div>
 
-</div>
-
 <script>
-let ventas = [];
+let ventas=[];
 
-let scanner = new Html5QrcodeScanner("reader",{fps:10,qrbox:250});
-scanner.render(function(code){
-    let a = prompt("1 vender | 2 agregar");
+function vender(c,n,p){
+ventas.push({n,p});
+location="/restar/"+c;
+}
 
-    if(a=="1"){
-        ventas.push(code);
-        location="/restar/"+code;
-    }
-    else if(a=="2"){
-        location="/?nuevo="+code;
-    }
+function ticket(){
+let total=0;
+let html="<h2>Ticket</h2>";
+ventas.forEach(v=>{
+html+=`<p>${v.n} - $${v.p}</p>`;
+total+=v.p;
 });
-
-/* QR */
-function generarQR(codigo){
-    document.getElementById("qrcode").innerHTML="";
-    new QRCode(document.getElementById("qrcode"), codigo);
+html+=`<h3>Total: $${total}</h3>`;
+let w=window.open();
+w.document.write(html);
+w.print();
 }
 
-/* 🎟 TICKET */
-function imprimirTicket(){
-    let html = "<h2>Ticket</h2>";
-
-    ventas.forEach(v=>{
-        html += "<p>Producto: "+v+"</p>";
-    });
-
-    html += "<br><b>Total items: "+ventas.length+"</b>";
-
-    let w = window.open();
-    w.document.write(html);
-    w.print();
+function qr(c){
+document.getElementById("qrcode").innerHTML="";
+new QRCode(document.getElementById("qrcode"),c);
 }
+
+let scanner=new Html5QrcodeScanner("reader",{fps:10,qrbox:250});
+scanner.render(code=>{
+let a=prompt("1 vender | 2 agregar");
+if(a=="1"){location="/restar/"+code;}
+if(a=="2"){location="/?nuevo="+code;}
+});
 </script>
 
 </body>

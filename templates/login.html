@@ -1,46 +1,12 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Login</title>
-<style>
-body {
-    font-family: Arial;
-    background: #020617;
-    color: white;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
-}
-.box {
-    background:#1e293b;
-    padding:30px;
-    border-radius:15px;
-}
-input {
-    display:block;
-    margin:10px 0;
-    padding:10px;
-}
-button {
-    padding:10px;
-    background:#22c55e;
-    border:none;
-}
-</style>
-</head>
-<body>
-
-<div class="box">
+<html>
+<body style="background:#020617;color:white;text-align:center;padding-top:100px;">
 <h2>📦 stockAr</h2>
 <form method="POST">
-<input name="username" placeholder="Usuario">
-<input name="password" type="password" placeholder="Contraseña">
+<input name="username" placeholder="Usuario" required><br>
+<input name="password" type="password" placeholder="Contraseña" required><br>
 <button>Ingresar</button>
 </form>
 <a href="/register">Crear cuenta</a>
-</div>
-
 </body>
 </html>

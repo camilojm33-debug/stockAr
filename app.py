@@ -32,7 +32,7 @@ def init_db():
     )
     """)
 
-    # 🔥 ADMIN FIX (SIEMPRE FUNCIONA)
+    # 🔥 ADMIN GARANTIZADO
     password_hash = generate_password_hash("1234")
 
     user = conn.execute(
@@ -122,6 +122,9 @@ def index():
 # AGREGAR
 @app.route("/agregar", methods=["POST"])
 def agregar():
+    if "user_id" not in session:
+        return redirect("/login")
+
     codigo = request.form["codigo"]
     nombre = request.form["nombre"]
     cantidad = int(request.form["cantidad"])
@@ -152,6 +155,9 @@ def agregar():
 # SUMAR
 @app.route("/sumar/<codigo>")
 def sumar(codigo):
+    if "user_id" not in session:
+        return redirect("/login")
+
     conn = get_db()
     conn.execute(
         "UPDATE productos SET cantidad = cantidad + 1 WHERE codigo=? AND user_id=?",
@@ -164,6 +170,9 @@ def sumar(codigo):
 # RESTAR
 @app.route("/restar/<codigo>")
 def restar(codigo):
+    if "user_id" not in session:
+        return redirect("/login")
+
     conn = get_db()
     conn.execute(
         "UPDATE productos SET cantidad = CASE WHEN cantidad > 0 THEN cantidad - 1 ELSE 0 END WHERE codigo=? AND user_id=?",

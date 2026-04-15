@@ -1,211 +1,31 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>stockAr</title>
-
-<script src="https://unpkg.com/html5-qrcode"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-
-<style>
-body {
-    margin: 0;
-    font-family: 'Poppins', sans-serif;
-    background: #020617;
-    color: white;
-}
-
-.header {
-    text-align: center;
-    padding: 20px;
-    font-size: 22px;
-}
-
-.app {
-    max-width: 420px;
-    margin: auto;
-    padding: 10px;
-}
-
-.card {
-    background: #1e293b;
-    border-radius: 18px;
-    padding: 18px;
-    margin-bottom: 15px;
-}
-
-button {
-    padding: 10px;
-    border-radius: 10px;
-    border: none;
-    cursor: pointer;
-    margin-top: 5px;
-}
-
-.btn-add { background: #22c55e; }
-.btn-sum { background: #3b82f6; }
-.btn-sell { background: #ef4444; }
-.btn-qr { background: #a855f7; }
-.btn-print { background: #f59e0b; }
-
-.item {
-    background: #334155;
-    border-radius: 12px;
-    padding: 12px;
-    margin-top: 10px;
-}
-
-#reader {
-    width: 100%;
-}
-
-/* IMPRESION */
-@media print {
-    body * {
-        visibility: hidden;
-    }
-
-    #printArea, #printArea * {
-        visibility: visible;
-    }
-
-    #printArea {
-        position: absolute;
-        top: 0;
-        left: 0;
-    }
-}
-
-.print-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    padding: 10px;
-}
-
-.label {
-    background: white;
-    color: black;
-    text-align: center;
-    padding: 10px;
-    border: 1px solid #ccc;
-}
-
-.label h4 {
-    margin: 5px 0;
-    font-size: 12px;
-}
-
-.label p {
-    font-size: 10px;
-}
-</style>
 </head>
+<body style="background:#020617;color:white;font-family:Arial;">
 
-<body>
+<h2>📦 stockAr</h2>
+<a href="/logout">Cerrar sesión</a>
 
-<div class="header">📦 stockAr</div>
+<h3>Agregar producto</h3>
+<form action="/agregar" method="POST">
+<input name="codigo" placeholder="Código"><br>
+<input name="nombre" placeholder="Nombre"><br>
+<input name="cantidad" type="number" placeholder="Cantidad"><br>
+<button>Agregar</button>
+</form>
 
-<div class="app">
+<h3>Inventario</h3>
 
-<div class="card">
-    <h3>📷 Escanear</h3>
-    <div id="reader"></div>
+{% for p in productos %}
+<div>
+<b>{{p.nombre}}</b> ({{p.cantidad}})
+<br>
+<a href="/sumar/{{p.codigo}}">➕</a>
+<a href="/restar/{{p.codigo}}">➖</a>
 </div>
-
-<div class="card">
-    <h3>➕ Agregar</h3>
-    <form action="/agregar" method="POST">
-        <input type="text" name="codigo" id="codigo" value="{{ request.args.get('nuevo','') }}" placeholder="Código" required>
-        <input type="text" name="nombre" placeholder="Nombre" required>
-        <input type="number" name="cantidad" placeholder="Cantidad" required>
-        <button class="btn-add">Agregar</button>
-    </form>
-</div>
-
-<div class="card">
-    <h3>📋 Inventario</h3>
-
-    <button class="btn-print" onclick="imprimirTodo()">
-        🧾 Imprimir todas las etiquetas
-    </button>
-
-    {% for p in productos %}
-    <div class="item">
-        <b>{{ p.nombre }}</b> ({{ p.cantidad }})
-        <br><br>
-
-        <a href="/sumar/{{ p.codigo }}"><button class="btn-sum">+</button></a>
-        <a href="/restar/{{ p.codigo }}"><button class="btn-sell">-</button></a>
-    </div>
-    {% endfor %}
-</div>
-
-</div>
-
-<!-- AREA DE IMPRESION -->
-<div id="printArea" style="display:none;">
-    <div class="print-grid" id="labelsContainer"></div>
-</div>
-
-<script>
-function onScanSuccess(decodedText) {
-    let accion = prompt("Código: " + decodedText + "\\n1 = Vender\\n2 = Agregar");
-
-    if (accion === "1") {
-        window.location.href = "/restar/" + decodedText;
-    } else if (accion === "2") {
-        window.location.href = "/?nuevo=" + decodedText;
-    }
-}
-
-let scanner = new Html5QrcodeScanner("reader",{fps:10,qrbox:250});
-scanner.render(onScanSuccess);
-
-function imprimirTodo() {
-
-    let productos = {{ productos | tojson }};
-
-    let container = document.getElementById("labelsContainer");
-    container.innerHTML = "";
-
-    productos.forEach(p => {
-
-        let div = document.createElement("div");
-        div.className = "label";
-
-        let title = document.createElement("h4");
-        title.innerText = p.nombre;
-
-        let qrDiv = document.createElement("div");
-
-        let code = document.createElement("p");
-        code.innerText = p.codigo;
-
-        div.appendChild(title);
-        div.appendChild(qrDiv);
-        div.appendChild(code);
-
-        container.appendChild(div);
-
-        new QRCode(qrDiv, {
-            text: p.codigo,
-            width: 60,
-            height: 60
-        });
-
-    });
-
-    document.getElementById("printArea").style.display = "block";
-
-    window.print();
-
-    document.getElementById("printArea").style.display = "none";
-}
-</script>
+{% endfor %}
 
 </body>
 </html>

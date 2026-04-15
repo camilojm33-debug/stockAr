@@ -14,7 +14,6 @@ def get_db():
 def init_db():
     conn = get_db()
 
-    # TABLA USUARIOS
     conn.execute("""
     CREATE TABLE IF NOT EXISTS usuarios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -23,7 +22,6 @@ def init_db():
     )
     """)
 
-    # TABLA PRODUCTOS
     conn.execute("""
     CREATE TABLE IF NOT EXISTS productos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,16 +32,23 @@ def init_db():
     )
     """)
 
-    # 🔥 CREAR USUARIO ADMIN SI NO EXISTE
-    user = conn.execute("SELECT * FROM usuarios WHERE username='admin'").fetchone()
+    # 🔥 ADMIN FIX (SIEMPRE FUNCIONA)
+    password_hash = generate_password_hash("1234")
+
+    user = conn.execute(
+        "SELECT * FROM usuarios WHERE username='admin'"
+    ).fetchone()
 
     if not user:
-        password_hash = generate_password_hash("1234")
         conn.execute(
             "INSERT INTO usuarios (username,password) VALUES (?,?)",
             ("admin", password_hash)
         )
-        print("✅ Usuario creado: admin / 1234")
+    else:
+        conn.execute(
+            "UPDATE usuarios SET password=? WHERE username='admin'",
+            (password_hash,)
+        )
 
     conn.commit()
     conn.close()

@@ -68,6 +68,7 @@ button {
     margin-top: 10px;
     display: flex;
     justify-content: space-between;
+    align-items: center;
 }
 
 .actions button {
@@ -103,7 +104,7 @@ button {
         <h3>➕ Nuevo producto</h3>
 
         <form action="/agregar" method="POST">
-            <input type="text" name="codigo" id="codigo" placeholder="Código" required>
+            <input type="text" name="codigo" id="codigo" value="{{ request.args.get('nuevo','') }}" placeholder="Código" required>
             <input type="text" name="nombre" placeholder="Nombre" required>
             <input type="number" name="cantidad" placeholder="Cantidad" required>
             <button class="btn-add">Agregar</button>
@@ -136,13 +137,22 @@ button {
 
 <script>
 function onScanSuccess(decodedText) {
+
     document.getElementById("resultado").innerText = "Código: " + decodedText;
 
-    // Auto completar input
-    document.getElementById("codigo").value = decodedText;
+    let accion = prompt(
+        "Código: " + decodedText + "\n\n" +
+        "1 = Vender\n" +
+        "2 = Agregar stock"
+    );
 
-    // Redirigir para sumar automáticamente
-    window.location.href = "/sumar/" + decodedText;
+    if (accion === "1") {
+        window.location.href = "/restar/" + decodedText;
+    } else if (accion === "2") {
+        window.location.href = "/sumar/" + decodedText;
+    } else {
+        alert("Acción cancelada");
+    }
 }
 
 let scanner = new Html5QrcodeScanner(

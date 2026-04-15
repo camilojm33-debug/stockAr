@@ -2,184 +2,105 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-
 <style>
-body {
-    margin:0;
-    font-family:'Poppins',sans-serif;
-    background: linear-gradient(180deg,#020617,#020617 60%,#0f172a);
-    color:white;
+body {background:#020617;color:white;font-family:Arial;text-align:center;}
+
+.card {background:#1e293b;padding:15px;margin:10px;border-radius:10px;}
+
+button {padding:10px;margin:5px;border:none;border-radius:8px;font-weight:bold;}
+
+.btn-add{background:#22c55e;}
+.btn-sum{background:#3b82f6;}
+.btn-sell{background:#ef4444;}
+.btn-ticket{background:#f59e0b;}
+.btn-qr{background:#a855f7;}
+
+.item{background:#334155;padding:10px;margin-top:10px;border-radius:10px;}
+
+#qrModal{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.8);
+display:none;
+justify-content:center;
+align-items:center;
 }
 
-/* HEADER */
-.header {
-    text-align:center;
-    padding:20px;
-    font-size:26px;
-    font-weight:600;
-}
-
-/* CONTENEDOR */
-.container {
-    max-width:450px;
-    margin:auto;
-    padding:15px;
-}
-
-/* CARD */
-.card {
-    background:#1e293b;
-    border-radius:20px;
-    padding:18px;
-    margin-bottom:18px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.6);
-}
-
-/* INPUT */
-input {
-    width:100%;
-    padding:14px;
-    margin-top:10px;
-    border-radius:14px;
-    border:none;
-    background:#334155;
-    color:white;
-    font-size:15px;
-}
-
-/* BOTONES */
-button {
-    width:100%;
-    padding:14px;
-    margin-top:12px;
-    border:none;
-    border-radius:14px;
-    font-weight:600;
-    cursor:pointer;
-    font-size:15px;
-    transition:0.2s;
-}
-
-button:hover {
-    transform:scale(1.03);
-}
-
-/* COLORES */
-.btn-add { background:#22c55e; }
-.btn-ticket { background:#f59e0b; }
-.btn-sell { background:#ef4444; }
-.btn-sum { background:#3b82f6; }
-.btn-qr { background:#a855f7; }
-
-/* ITEM */
-.item {
-    background:#334155;
-    border-radius:15px;
-    padding:15px;
-    margin-top:12px;
-}
-
-.item-title {
-    font-weight:600;
-    font-size:17px;
-}
-
-.item-info {
-    font-size:13px;
-    color:#94a3b8;
-}
-
-/* BOTONES ITEM */
-.actions {
-    display:flex;
-    gap:8px;
-    margin-top:10px;
-}
-
-.actions button {
-    flex:1;
-    padding:10px;
-}
-
-/* SCANNER */
-#reader {
-    width:100%;
+.label{
+background:white;
+color:black;
+padding:15px;
+border-radius:10px;
+text-align:center;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">📦 stockAr</div>
-
-<div class="container">
-
+<h2>📦 stockAr</h2>
 <a href="/logout">Cerrar sesión</a>
 
-<!-- SCANNER -->
 <div class="card">
 <h3>📷 Escanear</h3>
 <div id="reader"></div>
 </div>
 
-<!-- PRODUCTO -->
 <div class="card">
-<h3>➕ Nuevo producto</h3>
-
+<h3>➕ Producto</h3>
 <form action="/agregar" method="POST">
-<input name="codigo" placeholder="Código">
-<input name="nombre" placeholder="Nombre del producto">
-<input name="cantidad" type="number" placeholder="Cantidad">
-<input name="precio" type="number" step="0.01" placeholder="Precio ($)">
-<button class="btn-add">Agregar producto</button>
+<input name="codigo" placeholder="Código"><br>
+<input name="nombre" placeholder="Nombre"><br>
+<input name="cantidad" type="number" placeholder="Cantidad"><br>
+<input name="precio" type="number" placeholder="Precio"><br>
+<button class="btn-add">Agregar</button>
 </form>
-
 </div>
 
-<!-- INVENTARIO -->
 <div class="card">
 <h3>📋 Inventario</h3>
 
-<button class="btn-ticket" onclick="ticket()">🧾 Generar Ticket</button>
-
 {% for p in productos %}
 <div class="item">
+<b>{{p.nombre}}</b><br>
+$ {{p.precio}}
 
-<div class="item-title">{{p.nombre}}</div>
-<div class="item-info">
-Stock: {{p.cantidad}} • ${{p.precio}}
-</div>
+<br>
 
-<div class="actions">
-
-<a href="/sumar/{{p.codigo}}">
-<button class="btn-sum">+</button>
-</a>
+<a href="/sumar/{{p.codigo}}"><button class="btn-sum">+</button></a>
 
 <button class="btn-sell"
 onclick="vender('{{p.codigo}}','{{p.nombre}}',{{p.precio}})">
 Vender
 </button>
 
-<button class="btn-qr" onclick="qr('{{p.codigo}}')">
-QR
+<button class="btn-qr"
+onclick="generarQR('{{p.codigo}}','{{p.nombre}}',{{p.precio}})">
+Etiqueta QR
 </button>
-
-</div>
 
 </div>
 {% endfor %}
 
 </div>
 
+<!-- MODAL -->
+<div id="qrModal">
+<div class="label">
+<h3 id="nombre"></h3>
 <div id="qrcode"></div>
+<p id="precio"></p>
 
+<button onclick="imprimir()">🖨 Imprimir</button>
+<button onclick="cerrar()">Cerrar</button>
+</div>
 </div>
 
 <script>
@@ -190,34 +111,47 @@ ventas.push({n,p});
 location="/restar/"+c;
 }
 
-function ticket(){
-let total=0;
-let html="<h2>🧾 Ticket</h2>";
+/* QR COMPLETO */
+function generarQR(c,n,p){
 
-ventas.forEach(v=>{
-html+=`<p>${v.n} - $${v.p}</p>`;
-total+=v.p;
-});
+let data = c + "|" + n + "|" + p;
 
-html+=`<hr><h3>Total: $${total}</h3>`;
+document.getElementById("qrModal").style.display="flex";
+document.getElementById("nombre").innerText=n;
+document.getElementById("precio").innerText="$"+p;
 
-let w=window.open();
-w.document.write(html);
-w.print();
-}
-
-function qr(c){
 document.getElementById("qrcode").innerHTML="";
-new QRCode(document.getElementById("qrcode"),c);
+
+new QRCode(document.getElementById("qrcode"), data);
 }
 
-/* SCANNER */
+function cerrar(){
+document.getElementById("qrModal").style.display="none";
+}
+
+function imprimir(){
+window.print();
+}
+
+/* SCAN */
 let scanner=new Html5QrcodeScanner("reader",{fps:10,qrbox:250});
 scanner.render(code=>{
-let a=prompt("1 vender | 2 agregar");
 
-if(a=="1"){location="/restar/"+code;}
-if(a=="2"){location="/?nuevo="+code;}
+if(code.includes("|")){
+let parts = code.split("|");
+
+let codigo = parts[0];
+let nombre = parts[1];
+let precio = parseFloat(parts[2]);
+
+ventas.push({nombre,precio});
+
+location="/restar/"+codigo;
+}
+else{
+location="/restar/"+code;
+}
+
 });
 </script>
 

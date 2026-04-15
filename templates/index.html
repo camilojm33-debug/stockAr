@@ -141,16 +141,19 @@ function onScanSuccess(decodedText) {
     document.getElementById("resultado").innerText = "Código: " + decodedText;
 
     let accion = prompt(
-        "Código: " + decodedText + "\n\n" +
-        "1 = Vender\n" +
+        "Código: " + decodedText + "\\n\\n" +
+        "1 = Vender\\n" +
         "2 = Agregar stock"
     );
 
     if (accion === "1") {
         window.location.href = "/restar/" + decodedText;
-    } else if (accion === "2") {
-        window.location.href = "/sumar/" + decodedText;
-    } else {
+    }
+    else if (accion === "2") {
+        // 🔥 ACA ESTA EL FIX
+        window.location.href = "/?nuevo=" + decodedText;
+    }
+    else {
         alert("Acción cancelada");
     }
 }

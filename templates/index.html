@@ -5,50 +5,42 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>stockAr</title>
 
+<script src="https://unpkg.com/html5-qrcode"></script>
+
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
 body {
     margin: 0;
     font-family: 'Poppins', sans-serif;
-    background: linear-gradient(135deg, #0f172a, #020617);
+    background: linear-gradient(135deg, #020617, #0f172a);
     color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+}
+
+.header {
+    text-align: center;
+    padding: 20px;
+    font-size: 22px;
+    font-weight: 600;
 }
 
 .app {
-    width: 100%;
     max-width: 420px;
-    padding: 20px;
+    margin: auto;
+    padding: 10px;
 }
 
 .card {
     background: #1e293b;
-    border-radius: 20px;
-    padding: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-    margin-bottom: 20px;
-}
-
-h1 {
-    text-align: center;
-    margin-bottom: 5px;
-}
-
-.subtitle {
-    text-align: center;
-    font-size: 14px;
-    color: #94a3b8;
-    margin-bottom: 20px;
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 15px;
 }
 
 input {
     width: 100%;
     padding: 12px;
-    margin: 6px 0;
+    margin-top: 8px;
     border-radius: 10px;
     border: none;
     background: #334155;
@@ -58,7 +50,7 @@ input {
 button {
     width: 100%;
     padding: 12px;
-    margin-top: 10px;
+    margin-top: 12px;
     border-radius: 12px;
     border: none;
     font-weight: 600;
@@ -66,8 +58,8 @@ button {
 }
 
 .btn-add { background: #22c55e; }
-.btn-sell { background: #ef4444; }
 .btn-sum { background: #3b82f6; }
+.btn-sell { background: #ef4444; }
 
 .item {
     background: #334155;
@@ -76,7 +68,6 @@ button {
     margin-top: 10px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
 }
 
 .actions button {
@@ -85,42 +76,41 @@ button {
     margin-left: 5px;
 }
 
-.scanner {
-    text-align: center;
-    padding: 20px;
-    border: 2px dashed #475569;
-    border-radius: 15px;
+/* SCANNER */
+#reader {
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
 }
 </style>
 </head>
 
 <body>
 
+<div class="header">📦 stockAr</div>
+
 <div class="app">
 
+    <!-- SCANNER -->
     <div class="card">
-        <h1>📦 stockAr</h1>
-        <div class="subtitle">Control simple de inventario</div>
+        <h3>📷 Escanear producto</h3>
+        <div id="reader"></div>
+        <p id="resultado"></p>
     </div>
 
+    <!-- AGREGAR -->
     <div class="card">
-        <h3>📷 Escanear</h3>
-        <div class="scanner">
-            (Próximamente QR)
-        </div>
-    </div>
-
-    <div class="card">
-        <h3>➕ Agregar producto</h3>
+        <h3>➕ Nuevo producto</h3>
 
         <form action="/agregar" method="POST">
-            <input type="text" name="codigo" placeholder="Código" required>
+            <input type="text" name="codigo" id="codigo" placeholder="Código" required>
             <input type="text" name="nombre" placeholder="Nombre" required>
             <input type="number" name="cantidad" placeholder="Cantidad" required>
-            <button class="btn-add">Agregar producto</button>
+            <button class="btn-add">Agregar</button>
         </form>
     </div>
 
+    <!-- INVENTARIO -->
     <div class="card">
         <h3>📋 Inventario</h3>
 
@@ -143,6 +133,25 @@ button {
     </div>
 
 </div>
+
+<script>
+function onScanSuccess(decodedText) {
+    document.getElementById("resultado").innerText = "Código: " + decodedText;
+
+    // Auto completar input
+    document.getElementById("codigo").value = decodedText;
+
+    // Redirigir para sumar automáticamente
+    window.location.href = "/sumar/" + decodedText;
+}
+
+let scanner = new Html5QrcodeScanner(
+    "reader",
+    { fps: 10, qrbox: 250 }
+);
+
+scanner.render(onScanSuccess);
+</script>
 
 </body>
 </html>

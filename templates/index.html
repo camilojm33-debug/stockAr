@@ -9,25 +9,73 @@
 
 <style>
 body {
+    margin:0;
+    font-family: 'Segoe UI', sans-serif;
     background: linear-gradient(135deg,#020617,#0f172a);
     color:white;
-    font-family: Arial;
-    text-align:center;
 }
 
+/* CONTENEDOR */
+.container {
+    max-width: 400px;
+    margin:auto;
+    padding:20px;
+}
+
+/* CARD */
 .card {
     background:#1e293b;
-    margin:10px auto;
-    padding:15px;
     border-radius:15px;
-    width:300px;
+    padding:15px;
+    margin-bottom:15px;
+    box-shadow:0 5px 15px rgba(0,0,0,0.4);
 }
 
-button { padding:10px; margin:5px; }
+/* INPUT */
+input {
+    width:100%;
+    padding:10px;
+    margin-top:5px;
+    border-radius:8px;
+    border:none;
+    background:#334155;
+    color:white;
+}
+
+/* BOTONES */
+button {
+    border:none;
+    border-radius:10px;
+    padding:10px;
+    margin-top:10px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.btn-add { background:#22c55e; }
+.btn-sum { background:#3b82f6; }
+.btn-sell { background:#ef4444; }
+.btn-ticket { background:#f59e0b; }
+.btn-qr { background:#a855f7; }
+
+/* ITEM */
+.item {
+    background:#334155;
+    padding:10px;
+    border-radius:10px;
+    margin-top:10px;
+}
+
+/* TITULO */
+h2 {
+    text-align:center;
+}
 </style>
 </head>
 
 <body>
+
+<div class="container">
 
 <h2>📦 stockAr</h2>
 <a href="/logout">Cerrar sesión</a>
@@ -38,54 +86,77 @@ button { padding:10px; margin:5px; }
 </div>
 
 <div class="card">
-<h3>➕ Agregar</h3>
+<h3>➕ Agregar producto</h3>
 <form action="/agregar" method="POST">
-<input name="codigo" placeholder="Código"><br>
-<input name="nombre" placeholder="Nombre"><br>
-<input name="cantidad" type="number" placeholder="Cantidad"><br>
-<button>Agregar</button>
+<input name="codigo" placeholder="Código">
+<input name="nombre" placeholder="Nombre">
+<input name="cantidad" type="number" placeholder="Cantidad">
+<button class="btn-add">Agregar</button>
 </form>
 </div>
 
 <div class="card">
 <h3>📋 Inventario</h3>
 
-<button onclick="imprimirTodo()">🧾 Imprimir etiquetas</button>
+<button class="btn-ticket" onclick="imprimirTicket()">🎟 Generar Ticket</button>
 
 {% for p in productos %}
-<div>
+<div class="item">
 <b>{{p.nombre}}</b> ({{p.cantidad}})
+
 <br>
-<a href="/sumar/{{p.codigo}}"><button>+</button></a>
-<a href="/restar/{{p.codigo}}"><button>-</button></a>
-<button onclick="generarQR('{{p.codigo}}')">QR</button>
+
+<a href="/sumar/{{p.codigo}}">
+<button class="btn-sum">+</button>
+</a>
+
+<a href="/restar/{{p.codigo}}">
+<button class="btn-sell">-</button>
+</a>
+
+<button class="btn-qr" onclick="generarQR('{{p.codigo}}')">QR</button>
+
 </div>
 {% endfor %}
-
 </div>
 
 <div id="qrcode"></div>
 
+</div>
+
 <script>
+let ventas = [];
+
 let scanner = new Html5QrcodeScanner("reader",{fps:10,qrbox:250});
 scanner.render(function(code){
     let a = prompt("1 vender | 2 agregar");
-    if(a=="1") location="/restar/"+code;
-    else if(a=="2") location="/?nuevo="+code;
+
+    if(a=="1"){
+        ventas.push(code);
+        location="/restar/"+code;
+    }
+    else if(a=="2"){
+        location="/?nuevo="+code;
+    }
 });
 
+/* QR */
 function generarQR(codigo){
     document.getElementById("qrcode").innerHTML="";
     new QRCode(document.getElementById("qrcode"), codigo);
 }
 
-function imprimirTodo(){
-    let productos = {{ productos | tojson }};
-    let html="";
-    productos.forEach(p=>{
-        html+=`<div>${p.nombre}<br>${p.codigo}</div>`;
+/* 🎟 TICKET */
+function imprimirTicket(){
+    let html = "<h2>Ticket</h2>";
+
+    ventas.forEach(v=>{
+        html += "<p>Producto: "+v+"</p>";
     });
-    let w=window.open();
+
+    html += "<br><b>Total items: "+ventas.length+"</b>";
+
+    let w = window.open();
     w.document.write(html);
     w.print();
 }

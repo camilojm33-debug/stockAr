@@ -1,42 +1,42 @@
 from flask import Flask, render_template, request, redirect, session
 import sqlite3
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.secret_key = "secreto123"
+app.secret_key = "stockar_secret"
 
-# 📦 DB
+# DB
 def get_db():
     conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
     return conn
 
-# 🧠 INIT DB
 def init_db():
     conn = get_db()
 
     conn.execute("""
-        CREATE TABLE IF NOT EXISTS usuarios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE,
-            password TEXT
-        )
+    CREATE TABLE IF NOT EXISTS usuarios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE,
+        password TEXT
+    )
     """)
 
     conn.execute("""
-        CREATE TABLE IF NOT EXISTS productos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            codigo TEXT,
-            nombre TEXT,
-            cantidad INTEGER,
-            user_id INTEGER
-        )
+    CREATE TABLE IF NOT EXISTS productos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        codigo TEXT,
+        nombre TEXT,
+        cantidad INTEGER,
+        user_id INTEGER
+    )
     """)
 
     conn.close()
 
 init_db()
 
-# 🔐 LOGIN
+# LOGIN
 @app.route("/login", methods=["GET","POST"])
 def login():
     if request.method == "POST":
@@ -45,12 +45,12 @@ def login():
 
         conn = get_db()
         user = conn.execute(
-            "SELECT * FROM usuarios WHERE username=? AND password=?",
-            (username,password)
+            "SELECT * FROM usuarios WHERE username=?",
+            (username,)
         ).fetchone()
         conn.close()
 
-        if user:
+        if user and check_password_hash(user["password"], password):
             session["user_id"] = user["id"]
             return redirect("/")
         else:
@@ -58,17 +58,19 @@ def login():
 
     return render_template("login.html")
 
-# 📝 REGISTER
+# REGISTER
 @app.route("/register", methods=["GET","POST"])
 def register():
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
 
+        password_hash = generate_password_hash(password)
+
         conn = get_db()
         conn.execute(
             "INSERT INTO usuarios (username,password) VALUES (?,?)",
-            (username,password)
+            (username, password_hash)
         )
         conn.commit()
         conn.close()
@@ -77,13 +79,13 @@ def register():
 
     return render_template("register.html")
 
-# 🚪 LOGOUT
+# LOGOUT
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/login")
 
-# 🏠 HOME
+# HOME
 @app.route("/")
 def index():
     if "user_id" not in session:
@@ -98,7 +100,7 @@ def index():
 
     return render_template("index.html", productos=productos)
 
-# ➕ AGREGAR
+# AGREGAR
 @app.route("/agregar", methods=["POST"])
 def agregar():
     codigo = request.form["codigo"]
@@ -128,7 +130,7 @@ def agregar():
 
     return redirect("/")
 
-# ➕ SUMAR
+# SUMAR
 @app.route("/sumar/<codigo>")
 def sumar(codigo):
     conn = get_db()
@@ -140,7 +142,7 @@ def sumar(codigo):
     conn.close()
     return redirect("/")
 
-# ➖ RESTAR
+# RESTAR
 @app.route("/restar/<codigo>")
 def restar(codigo):
     conn = get_db()

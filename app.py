@@ -41,7 +41,6 @@ def restar(codigo):
             p["cantidad"] -= 1
     return redirect('/')
 
-# 🔥 VENDER + TICKET
 @app.route('/vender', methods=['POST'])
 def vender_producto():
     codigo = request.form['codigo']

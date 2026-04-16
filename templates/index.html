@@ -101,6 +101,17 @@ border-radius:15px;
 </div>
 
 <div class="card">
+<h3>🖨 QR en hoja A4</h3>
+
+<input id="a4_codigo" placeholder="Código"><br>
+<input id="a4_nombre" placeholder="Nombre"><br>
+<input id="a4_precio" type="number" placeholder="Precio"><br>
+<input id="a4_cantidad" type="number" placeholder="Cantidad"><br>
+
+<button class="btn-qr" onclick="generarA4()">Generar A4</button>
+</div>
+
+<div class="card">
 <h3>📋 Inventario</h3>
 
 {% for p in productos %}
@@ -117,7 +128,6 @@ Precio: $ {{p.precio}}
 <button class="btn-sum">➕</button>
 </a>
 
-<!-- 🔥 VENDER REAL -->
 <form action="/vender" method="POST" style="display:inline;">
 <input type="hidden" name="codigo" value="{{p.codigo}}">
 <button class="btn-sell">Vender</button>
@@ -133,7 +143,6 @@ QR
 
 </div>
 
-<!-- MODAL QR -->
 <div id="qrModal">
 <div class="label">
 <h3 id="nombre"></h3>
@@ -170,6 +179,65 @@ document.getElementById("precio").innerText="$"+p;
 
 document.getElementById("qrcode").innerHTML="";
 new QRCode(document.getElementById("qrcode"), data);
+}
+
+function generarA4(){
+
+let c = document.getElementById("a4_codigo").value;
+let n = document.getElementById("a4_nombre").value;
+let p = document.getElementById("a4_precio").value;
+let cantidad = document.getElementById("a4_cantidad").value;
+
+let data = c + "|" + n + "|" + p;
+
+let ventana = window.open("", "_blank");
+
+let contenido = `
+<html>
+<head>
+<style>
+body{font-family:Arial;}
+.grid{
+display:grid;
+grid-template-columns: repeat(4, 1fr);
+gap:20px;
+padding:20px;
+}
+.label{
+text-align:center;
+border:1px dashed black;
+padding:10px;
+}
+</style>
+</head>
+<body>
+<div class="grid">
+`;
+
+for(let i=0;i<cantidad;i++){
+contenido += `
+<div class="label">
+<div id="qr${i}"></div>
+<p>${n}</p>
+<p>$${p}</p>
+</div>
+`;
+}
+
+contenido += `</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+let data = "${data}";
+`;
+
+for(let i=0;i<cantidad;i++){
+contenido += `new QRCode(document.getElementById("qr${i}"), data);`;
+}
+
+contenido += `window.print();</script></body></html>`;
+
+ventana.document.write(contenido);
+ventana.document.close();
 }
 
 function cerrar(){

@@ -7,23 +7,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <style>
-body {
-background:#020617;
-color:white;
-font-family:Arial;
-text-align:center;
-margin:0;
-}
+body {background:#020617;color:white;font-family:Arial;text-align:center;margin:0;}
 
-/* HEADER */
-h2 {
-background:#020617;
-padding:15px;
-margin:0;
-font-size:24px;
-}
-
-/* CARDS */
 .card {
 background:#0f172a;
 padding:20px;
@@ -32,7 +17,6 @@ border-radius:15px;
 box-shadow:0 0 15px rgba(0,0,0,0.5);
 }
 
-/* INPUTS */
 input {
 padding:12px;
 margin:5px;
@@ -40,10 +24,8 @@ border-radius:10px;
 border:none;
 width:200px;
 text-align:center;
-font-size:14px;
 }
 
-/* BOTONES */
 button {
 padding:12px 18px;
 margin:6px;
@@ -51,21 +33,13 @@ border:none;
 border-radius:12px;
 font-weight:bold;
 cursor:pointer;
-font-size:14px;
-transition:0.2s;
 }
 
-button:hover {
-transform:scale(1.05);
-}
-
-/* COLORES */
 .btn-add{background:#22c55e;}
 .btn-sum{background:#3b82f6;}
 .btn-sell{background:#ef4444;}
 .btn-qr{background:#a855f7;}
 
-/* INVENTARIO */
 .item{
 background:#1e293b;
 padding:15px;
@@ -73,7 +47,6 @@ margin-top:10px;
 border-radius:12px;
 }
 
-/* MODAL QR */
 #qrModal{
 position:fixed;
 top:0;
@@ -91,13 +64,6 @@ background:white;
 color:black;
 padding:20px;
 border-radius:15px;
-text-align:center;
-}
-
-/* BOTON CERRAR */
-a{
-color:#38bdf8;
-text-decoration:none;
 }
 </style>
 </head>
@@ -105,15 +71,12 @@ text-decoration:none;
 <body>
 
 <h2>📦 stockAr</h2>
-<a href="/logout">Cerrar sesión</a>
 
-<!-- SCANNER -->
 <div class="card">
 <h3>📷 Escanear</h3>
 <div id="reader"></div>
 </div>
 
-<!-- AGREGAR PRODUCTO -->
 <div class="card">
 <h3>➕ Producto</h3>
 
@@ -123,11 +86,10 @@ text-decoration:none;
 <input name="cantidad" type="number" placeholder="Cantidad" required><br>
 <input name="precio" type="number" placeholder="Precio" required><br>
 
-<button class="btn-add">Agregar Producto</button>
+<button class="btn-add">Agregar</button>
 </form>
 </div>
 
-<!-- QR DIRECTO -->
 <div class="card">
 <h3>🏷 Generar QR</h3>
 
@@ -135,13 +97,9 @@ text-decoration:none;
 <input id="qr_nombre" placeholder="Nombre"><br>
 <input id="qr_precio" type="number" placeholder="Precio"><br>
 
-<button class="btn-qr" onclick="generarQRManual()">
-Generar QR
-</button>
-
+<button class="btn-qr" onclick="generarQRManual()">Generar QR</button>
 </div>
 
-<!-- INVENTARIO -->
 <div class="card">
 <h3>📋 Inventario</h3>
 
@@ -159,10 +117,11 @@ Precio: $ {{p.precio}}
 <button class="btn-sum">➕</button>
 </a>
 
-<button class="btn-sell"
-onclick="vender('{{p.codigo}}','{{p.nombre}}',{{p.precio}})">
-Vender
-</button>
+<!-- 🔥 VENDER REAL -->
+<form action="/vender" method="POST" style="display:inline;">
+<input type="hidden" name="codigo" value="{{p.codigo}}">
+<button class="btn-sell">Vender</button>
+</form>
 
 <button class="btn-qr"
 onclick="generarQR('{{p.codigo}}','{{p.nombre}}',{{p.precio}})">
@@ -177,30 +136,17 @@ QR
 <!-- MODAL QR -->
 <div id="qrModal">
 <div class="label">
-
 <h3 id="nombre"></h3>
-
 <div id="qrcode"></div>
-
 <p id="precio"></p>
 
 <button onclick="imprimir()">🖨 Imprimir</button>
 <button onclick="cerrar()">Cerrar</button>
-
 </div>
 </div>
 
 <script>
-let ventas=[];
-
-function vender(c,n,p){
-ventas.push({n,p});
-location="/restar/"+c;
-}
-
-/* QR DESDE PRODUCTO */
 function generarQR(c,n,p){
-
 let data = c + "|" + n + "|" + p;
 
 document.getElementById("qrModal").style.display="flex";
@@ -208,13 +154,10 @@ document.getElementById("nombre").innerText=n;
 document.getElementById("precio").innerText="$"+p;
 
 document.getElementById("qrcode").innerHTML="";
-
 new QRCode(document.getElementById("qrcode"), data);
 }
 
-/* QR MANUAL */
 function generarQRManual(){
-
 let c = document.getElementById("qr_codigo").value;
 let n = document.getElementById("qr_nombre").value;
 let p = document.getElementById("qr_precio").value;
@@ -226,7 +169,6 @@ document.getElementById("nombre").innerText=n;
 document.getElementById("precio").innerText="$"+p;
 
 document.getElementById("qrcode").innerHTML="";
-
 new QRCode(document.getElementById("qrcode"), data);
 }
 
@@ -242,22 +184,13 @@ window.print();
 let scanner=new Html5QrcodeScanner("reader",{fps:10,qrbox:250});
 
 scanner.render(code=>{
-
 if(code.includes("|")){
 let parts = code.split("|");
-
 let codigo = parts[0];
-let nombre = parts[1];
-let precio = parseFloat(parts[2]);
-
-ventas.push({nombre,precio});
-
 location="/restar/"+codigo;
-}
-else{
+}else{
 location="/restar/"+code;
 }
-
 });
 </script>
 

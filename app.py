@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, redirect
 app = Flask(__name__)
 
 productos = []
+ventas = []
 
 @app.route('/')
 def index():
@@ -36,9 +37,28 @@ def sumar(codigo):
 @app.route('/restar/<codigo>')
 def restar(codigo):
     for p in productos:
-        if p["codigo"] == codigo:
-            if p["cantidad"] > 0:
-                p["cantidad"] -= 1
+        if p["codigo"] == codigo and p["cantidad"] > 0:
+            p["cantidad"] -= 1
+    return redirect('/')
+
+# 🔥 VENDER + TICKET
+@app.route('/vender', methods=['POST'])
+def vender_producto():
+    codigo = request.form['codigo']
+
+    for p in productos:
+        if p["codigo"] == codigo and p["cantidad"] > 0:
+            p["cantidad"] -= 1
+
+            venta = {
+                "nombre": p["nombre"],
+                "precio": p["precio"]
+            }
+
+            ventas.append(venta)
+
+            return render_template("ticket.html", venta=venta)
+
     return redirect('/')
 
 @app.route('/logout')
@@ -46,4 +66,4 @@ def logout():
     return redirect('/')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()

@@ -2,17 +2,41 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Ticket</title>
+
+<style>
+body{
+font-family: monospace;
+text-align:center;
+}
+
+.ticket{
+width:260px;
+margin:auto;
+border:1px dashed black;
+padding:10px;
+}
+
+h2{margin:5px;}
+</style>
 </head>
+
 <body>
 
-<h1>🧾 Ticket</h1>
+<div class="ticket">
 
-<ul>
-{% for p in productos %}
-<li>{{ p[2] }} - {{ p[3] }}</li>
-{% endfor %}
-</ul>
+<h2>🧾 stockAr</h2>
+<p>--------------------</p>
+
+<p>Producto: {{venta.nombre}}</p>
+<p>Precio: ${{venta.precio}}</p>
+
+<p>--------------------</p>
+
+<p>Gracias por su compra</p>
+
+<button onclick="window.print()">🖨 Imprimir</button>
+
+</div>
 
 </body>
 </html>

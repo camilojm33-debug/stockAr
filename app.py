@@ -5,7 +5,7 @@ from datetime import datetime
 app = Flask(__name__)
 app.secret_key = "stockar_secret"
 
-# 🔥 DB
+# DB INIT
 def init_db():
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
@@ -51,8 +51,26 @@ def index():
 
     carrito = session.get("carrito", [])
 
-    return render_template('index.html', productos=productos_lista, carrito=carrito)
+    # 💰 caja diaria
+    hoy = datetime.now().strftime("%d/%m/%Y")
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
 
+    cursor.execute("SELECT precio FROM ventas WHERE fecha LIKE ?", (hoy+"%",))
+    ventas_hoy = cursor.fetchall()
+
+    total_hoy = sum([v[0] for v in ventas_hoy])
+    cantidad_hoy = len(ventas_hoy)
+
+    conn.close()
+
+    return render_template('index.html',
+                           productos=productos_lista,
+                           carrito=carrito,
+                           total_hoy=total_hoy,
+                           cantidad_hoy=cantidad_hoy)
+
+# AGREGAR PRODUCTO
 @app.route('/agregar', methods=['POST'])
 def agregar():
     conn = sqlite3.connect("database.db")
@@ -70,6 +88,7 @@ def agregar():
 
     return redirect('/')
 
+# SUMAR
 @app.route('/sumar/<codigo>')
 def sumar(codigo):
     conn = sqlite3.connect("database.db")
@@ -79,6 +98,7 @@ def sumar(codigo):
     conn.close()
     return redirect('/')
 
+# RESTAR
 @app.route('/restar/<codigo>')
 def restar(codigo):
     conn = sqlite3.connect("database.db")
@@ -88,7 +108,7 @@ def restar(codigo):
     conn.close()
     return redirect('/')
 
-# 🛒 CARRITO
+# CARRITO
 @app.route('/carrito/<codigo>')
 def carrito_add(codigo):
     conn = sqlite3.connect("database.db")
@@ -100,12 +120,17 @@ def carrito_add(codigo):
 
     if p:
         carrito = session.get("carrito", [])
-        carrito.append({"nombre": p[0], "precio": p[1]})
+        carrito.append({"codigo": codigo, "nombre": p[0], "precio": p[1]})
         session["carrito"] = carrito
 
     return redirect('/')
 
-# 🧾 FINALIZAR
+# 🆕 AGREGAR DESDE SCANNER
+@app.route('/scan/<codigo>')
+def scan_add(codigo):
+    return carrito_add(codigo)
+
+# FINALIZAR
 @app.route('/finalizar')
 def finalizar():
     carrito = session.get("carrito", [])
@@ -127,6 +152,11 @@ def finalizar():
             (item["nombre"], item["precio"], fecha)
         )
 
+        cursor.execute(
+            "UPDATE productos SET cantidad = cantidad - 1 WHERE codigo=? AND cantidad > 0",
+            (item["codigo"],)
+        )
+
     conn.commit()
     conn.close()
 
@@ -134,7 +164,7 @@ def finalizar():
 
     return render_template("ticket.html", carrito=carrito, total=total, fecha=fecha)
 
-# 📊 HISTORIAL
+# HISTORIAL
 @app.route('/historial')
 def historial():
     conn = sqlite3.connect("database.db")

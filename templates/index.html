@@ -14,7 +14,6 @@ background:#0f172a;
 padding:20px;
 margin:15px;
 border-radius:15px;
-box-shadow:0 0 15px rgba(0,0,0,0.5);
 }
 
 input {
@@ -27,10 +26,10 @@ text-align:center;
 }
 
 button {
-padding:12px 18px;
-margin:6px;
+padding:12px;
+margin:5px;
 border:none;
-border-radius:12px;
+border-radius:10px;
 font-weight:bold;
 cursor:pointer;
 }
@@ -44,26 +43,27 @@ cursor:pointer;
 background:#1e293b;
 padding:15px;
 margin-top:10px;
-border-radius:12px;
+border-radius:10px;
 }
 
-#qrModal{
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.9);
+#a4Container{
 display:none;
-justify-content:center;
-align-items:center;
-}
-
-.label{
 background:white;
 color:black;
 padding:20px;
-border-radius:15px;
+}
+
+.grid{
+display:grid;
+grid-template-columns: repeat(4, 1fr);
+gap:10px;
+}
+
+.label{
+text-align:center;
+border:1px dashed black;
+padding:10px;
+font-size:12px;
 }
 </style>
 </head>
@@ -71,11 +71,6 @@ border-radius:15px;
 <body>
 
 <h2>📦 stockAr</h2>
-
-<div class="card">
-<h3>📷 Escanear</h3>
-<div id="reader"></div>
-</div>
 
 <div class="card">
 <h3>➕ Producto</h3>
@@ -109,6 +104,11 @@ border-radius:15px;
 <input id="a4_cantidad" type="number" placeholder="Cantidad"><br>
 
 <button class="btn-qr" onclick="generarA4()">Generar A4</button>
+<button onclick="imprimirA4()">Imprimir</button>
+</div>
+
+<div id="a4Container">
+<div class="grid" id="a4Grid"></div>
 </div>
 
 <div class="card">
@@ -125,7 +125,7 @@ Precio: $ {{p.precio}}
 <br>
 
 <a href="/sumar/{{p.codigo}}">
-<button class="btn-sum">➕</button>
+<button class="btn-sum">+</button>
 </a>
 
 <form action="/vender" method="POST" style="display:inline;">
@@ -143,13 +143,13 @@ QR
 
 </div>
 
-<div id="qrModal">
-<div class="label">
+<div id="qrModal" style="display:none;background:black;position:fixed;width:100%;height:100%;top:0;left:0;">
+<div style="background:white;color:black;margin:100px auto;padding:20px;width:300px;">
 <h3 id="nombre"></h3>
 <div id="qrcode"></div>
 <p id="precio"></p>
 
-<button onclick="imprimir()">🖨 Imprimir</button>
+<button onclick="window.print()">🖨 Imprimir</button>
 <button onclick="cerrar()">Cerrar</button>
 </div>
 </div>
@@ -158,7 +158,7 @@ QR
 function generarQR(c,n,p){
 let data = c + "|" + n + "|" + p;
 
-document.getElementById("qrModal").style.display="flex";
+document.getElementById("qrModal").style.display="block";
 document.getElementById("nombre").innerText=n;
 document.getElementById("precio").innerText="$"+p;
 
@@ -171,95 +171,45 @@ let c = document.getElementById("qr_codigo").value;
 let n = document.getElementById("qr_nombre").value;
 let p = document.getElementById("qr_precio").value;
 
-let data = c + "|" + n + "|" + p;
-
-document.getElementById("qrModal").style.display="flex";
-document.getElementById("nombre").innerText=n;
-document.getElementById("precio").innerText="$"+p;
-
-document.getElementById("qrcode").innerHTML="";
-new QRCode(document.getElementById("qrcode"), data);
+generarQR(c,n,p);
 }
 
 function generarA4(){
-
 let c = document.getElementById("a4_codigo").value;
 let n = document.getElementById("a4_nombre").value;
 let p = document.getElementById("a4_precio").value;
-let cantidad = document.getElementById("a4_cantidad").value;
+let cantidad = parseInt(document.getElementById("a4_cantidad").value);
+
+let grid = document.getElementById("a4Grid");
+grid.innerHTML="";
 
 let data = c + "|" + n + "|" + p;
 
-let ventana = window.open("", "_blank");
-
-let contenido = `
-<html>
-<head>
-<style>
-body{font-family:Arial;}
-.grid{
-display:grid;
-grid-template-columns: repeat(4, 1fr);
-gap:20px;
-padding:20px;
-}
-.label{
-text-align:center;
-border:1px dashed black;
-padding:10px;
-}
-</style>
-</head>
-<body>
-<div class="grid">
-`;
-
 for(let i=0;i<cantidad;i++){
-contenido += `
-<div class="label">
+let div = document.createElement("div");
+div.className="label";
+
+div.innerHTML = `
 <div id="qr${i}"></div>
 <p>${n}</p>
 <p>$${p}</p>
-</div>
-`;
-}
-
-contenido += `</div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script>
-let data = "${data}";
 `;
 
-for(let i=0;i<cantidad;i++){
-contenido += `new QRCode(document.getElementById("qr${i}"), data);`;
+grid.appendChild(div);
+
+new QRCode(div.querySelector(`#qr${i}`), data);
 }
 
-contenido += `window.print();</script></body></html>`;
+document.getElementById("a4Container").style.display="block";
+}
 
-ventana.document.write(contenido);
-ventana.document.close();
+function imprimirA4(){
+window.print();
 }
 
 function cerrar(){
 document.getElementById("qrModal").style.display="none";
 }
-
-function imprimir(){
-window.print();
-}
-
-/* SCANNER */
-let scanner=new Html5QrcodeScanner("reader",{fps:10,qrbox:250});
-
-scanner.render(code=>{
-if(code.includes("|")){
-let parts = code.split("|");
-let codigo = parts[0];
-location="/restar/"+codigo;
-}else{
-location="/restar/"+code;
-}
-});
 </script>
 
 </body>

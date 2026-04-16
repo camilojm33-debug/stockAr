@@ -11,7 +11,7 @@ body {background:#020617;color:white;font-family:Arial;text-align:center;}
 
 .card {background:#1e293b;padding:15px;margin:10px;border-radius:10px;}
 
-button {padding:10px;margin:5px;border:none;border-radius:8px;font-weight:bold;}
+button {padding:10px;margin:5px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;}
 
 .btn-add{background:#22c55e;}
 .btn-sum{background:#3b82f6;}
@@ -56,10 +56,10 @@ text-align:center;
 <div class="card">
 <h3>➕ Producto</h3>
 <form action="/agregar" method="POST">
-<input name="codigo" placeholder="Código"><br>
-<input name="nombre" placeholder="Nombre"><br>
-<input name="cantidad" type="number" placeholder="Cantidad"><br>
-<input name="precio" type="number" placeholder="Precio"><br>
+<input name="codigo" placeholder="Código" required><br>
+<input name="nombre" placeholder="Nombre" required><br>
+<input name="cantidad" type="number" placeholder="Cantidad" required><br>
+<input name="precio" type="number" placeholder="Precio" required><br>
 <button class="btn-add">Agregar</button>
 </form>
 </div>
@@ -69,12 +69,17 @@ text-align:center;
 
 {% for p in productos %}
 <div class="item">
+
 <b>{{p.nombre}}</b><br>
-$ {{p.precio}}
+
+Stock: {{p.cantidad}} <br>
+Precio: $ {{p.precio}}
 
 <br>
 
-<a href="/sumar/{{p.codigo}}"><button class="btn-sum">+</button></a>
+<a href="/sumar/{{p.codigo}}">
+<button class="btn-sum">+</button>
+</a>
 
 <button class="btn-sell"
 onclick="vender('{{p.codigo}}','{{p.nombre}}',{{p.precio}})">
@@ -111,7 +116,7 @@ ventas.push({n,p});
 location="/restar/"+c;
 }
 
-/* QR COMPLETO */
+/* GENERAR QR */
 function generarQR(c,n,p){
 
 let data = c + "|" + n + "|" + p;
@@ -133,8 +138,9 @@ function imprimir(){
 window.print();
 }
 
-/* SCAN */
+/* SCANNER */
 let scanner=new Html5QrcodeScanner("reader",{fps:10,qrbox:250});
+
 scanner.render(code=>{
 
 if(code.includes("|")){

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+
+<style>
+body{
+font-family: Arial;
+background:#020617;
+color:white;
+text-align:center;
+}
+
+.card{
+background:#0f172a;
+padding:15px;
+margin:10px;
+border-radius:10px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>📊 Historial de ventas</h2>
+
+{% for v in ventas %}
+<div class="card">
+<p><b>{{v[0]}}</b></p>
+<p>$ {{v[1]}}</p>
+<p>{{v[2]}}</p>
+</div>
+{% endfor %}
+
+<a href="/">
+<button>⬅ Volver</button>
+</a>
+
+</body>
+</html>

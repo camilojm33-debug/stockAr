@@ -2,37 +2,23 @@
 <html>
 <head>
 <meta charset="UTF-8">
-
 <style>
-body{
-font-family: monospace;
-text-align:center;
-}
-
-.ticket{
-width:260px;
-margin:auto;
-border:1px dashed black;
-padding:10px;
-}
+body{font-family:monospace;text-align:center;}
+.ticket{width:260px;margin:auto;border:1px dashed black;padding:10px;}
 </style>
-
 </head>
-
 <body>
 
 <div class="ticket">
 
 <h2>🧾 stockAr</h2>
-<p>--------------------</p>
 
-<p>Producto: {{venta.nombre}}</p>
-<p>Precio: ${{venta.precio}}</p>
-<p>Fecha: {{venta.fecha}}</p>
+{% for item in carrito %}
+<p>{{item.nombre}} - ${{item.precio}}</p>
+{% endfor %}
 
-<p>--------------------</p>
-
-<p>Gracias por su compra</p>
+<p><b>Total: ${{total}}</b></p>
+<p>{{fecha}}</p>
 
 <button onclick="window.print()">🖨 Imprimir</button>
 

@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, session
 import sqlite3
 from datetime import datetime
 
 app = Flask(__name__)
+app.secret_key = "stockar_secret"
 
-# 🔥 CREAR DB SI NO EXISTE
+# 🔥 DB
 def init_db():
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
@@ -33,7 +34,6 @@ def init_db():
 
 init_db()
 
-# 🔥 HOME
 @app.route('/')
 def index():
     conn = sqlite3.connect("database.db")
@@ -44,18 +44,15 @@ def index():
 
     conn.close()
 
-    productos_lista = []
-    for p in productos:
-        productos_lista.append({
-            "codigo": p[0],
-            "nombre": p[1],
-            "cantidad": p[2],
-            "precio": p[3]
-        })
+    productos_lista = [
+        {"codigo": p[0], "nombre": p[1], "cantidad": p[2], "precio": p[3]}
+        for p in productos
+    ]
 
-    return render_template('index.html', productos=productos_lista)
+    carrito = session.get("carrito", [])
 
-# 🔥 AGREGAR
+    return render_template('index.html', productos=productos_lista, carrito=carrito)
+
 @app.route('/agregar', methods=['POST'])
 def agregar():
     conn = sqlite3.connect("database.db")
@@ -73,68 +70,82 @@ def agregar():
 
     return redirect('/')
 
-# 🔥 SUMAR
 @app.route('/sumar/<codigo>')
 def sumar(codigo):
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
-
     cursor.execute("UPDATE productos SET cantidad = cantidad + 1 WHERE codigo=?", (codigo,))
-
     conn.commit()
     conn.close()
-
     return redirect('/')
 
-# 🔥 RESTAR
 @app.route('/restar/<codigo>')
 def restar(codigo):
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
-
     cursor.execute("UPDATE productos SET cantidad = cantidad - 1 WHERE codigo=? AND cantidad > 0", (codigo,))
-
     conn.commit()
     conn.close()
+    return redirect('/')
+
+# 🛒 CARRITO
+@app.route('/carrito/<codigo>')
+def carrito_add(codigo):
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT nombre, precio FROM productos WHERE codigo=?", (codigo,))
+    p = cursor.fetchone()
+    conn.close()
+
+    if p:
+        carrito = session.get("carrito", [])
+        carrito.append({"nombre": p[0], "precio": p[1]})
+        session["carrito"] = carrito
 
     return redirect('/')
 
-# 🔥 VENDER + GUARDAR + TICKET
-@app.route('/vender', methods=['POST'])
-def vender():
-    codigo = request.form['codigo']
+# 🧾 FINALIZAR
+@app.route('/finalizar')
+def finalizar():
+    carrito = session.get("carrito", [])
+
+    if not carrito:
+        return redirect('/')
 
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
 
-    cursor.execute("SELECT nombre, precio, cantidad FROM productos WHERE codigo=?", (codigo,))
-    p = cursor.fetchone()
+    total = 0
+    fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
 
-    if p and p[2] > 0:
-        nombre, precio, cantidad = p
+    for item in carrito:
+        total += item["precio"]
 
-        # descontar
-        cursor.execute("UPDATE productos SET cantidad = cantidad - 1 WHERE codigo=?", (codigo,))
+        cursor.execute(
+            "INSERT INTO ventas (nombre, precio, fecha) VALUES (?, ?, ?)",
+            (item["nombre"], item["precio"], fecha)
+        )
 
-        # guardar venta
-        fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
-        cursor.execute("INSERT INTO ventas (nombre, precio, fecha) VALUES (?, ?, ?)", (nombre, precio, fecha))
+    conn.commit()
+    conn.close()
 
-        conn.commit()
-        conn.close()
+    session["carrito"] = []
 
-        return render_template("ticket.html", venta={
-            "nombre": nombre,
-            "precio": precio,
-            "fecha": fecha
-        })
+    return render_template("ticket.html", carrito=carrito, total=total, fecha=fecha)
+
+# 📊 HISTORIAL
+@app.route('/historial')
+def historial():
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT nombre, precio, fecha FROM ventas ORDER BY id DESC")
+    ventas = cursor.fetchall()
 
     conn.close()
-    return redirect('/')
 
-@app.route('/logout')
-def logout():
-    return redirect('/')
+    return render_template("historial.html", ventas=ventas)
 
 if __name__ == '__main__':
     app.run()

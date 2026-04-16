@@ -3,68 +3,25 @@
 <head>
 <meta charset="UTF-8">
 
-<script src="https://unpkg.com/html5-qrcode"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <style>
-body {background:#020617;color:white;font-family:Arial;text-align:center;margin:0;}
+body {background:#020617;color:white;font-family:Arial;text-align:center;}
 
-.card {
-background:#0f172a;
-padding:20px;
-margin:15px;
-border-radius:15px;
-}
+.card {background:#0f172a;padding:15px;margin:10px;border-radius:10px;}
 
-input {
-padding:12px;
-margin:5px;
-border-radius:10px;
-border:none;
-width:200px;
-text-align:center;
-}
-
-button {
-padding:12px;
-margin:5px;
-border:none;
-border-radius:10px;
-font-weight:bold;
-cursor:pointer;
-}
+button {padding:10px;margin:5px;border:none;border-radius:8px;font-weight:bold;cursor:pointer;}
 
 .btn-add{background:#22c55e;}
 .btn-sum{background:#3b82f6;}
 .btn-sell{background:#ef4444;}
 .btn-qr{background:#a855f7;}
 
-.item{
-background:#1e293b;
-padding:15px;
-margin-top:10px;
-border-radius:10px;
-}
+.item{background:#1e293b;padding:10px;margin-top:10px;border-radius:10px;}
 
-#a4Container{
-display:none;
-background:white;
-color:black;
-padding:20px;
-}
-
-.grid{
-display:grid;
-grid-template-columns: repeat(4, 1fr);
-gap:10px;
-}
-
-.label{
-text-align:center;
-border:1px dashed black;
-padding:10px;
-font-size:12px;
-}
+#a4Container{display:none;background:white;color:black;padding:20px;}
+.grid{display:grid;grid-template-columns: repeat(4, 1fr);gap:10px;}
+.label{text-align:center;border:1px dashed black;padding:10px;}
 </style>
 </head>
 
@@ -72,39 +29,31 @@ font-size:12px;
 
 <h2>📦 stockAr</h2>
 
+<a href="/historial">
+<button class="btn-qr">📊 Historial</button>
+</a>
+
 <div class="card">
 <h3>➕ Producto</h3>
-
 <form action="/agregar" method="POST">
 <input name="codigo" placeholder="Código" required><br>
 <input name="nombre" placeholder="Nombre" required><br>
 <input name="cantidad" type="number" placeholder="Cantidad" required><br>
 <input name="precio" type="number" placeholder="Precio" required><br>
-
 <button class="btn-add">Agregar</button>
 </form>
 </div>
 
 <div class="card">
-<h3>🏷 Generar QR</h3>
-
-<input id="qr_codigo" placeholder="Código"><br>
-<input id="qr_nombre" placeholder="Nombre"><br>
-<input id="qr_precio" type="number" placeholder="Precio"><br>
-
-<button class="btn-qr" onclick="generarQRManual()">Generar QR</button>
-</div>
-
-<div class="card">
-<h3>🖨 QR en hoja A4</h3>
+<h3>🖨 QR A4</h3>
 
 <input id="a4_codigo" placeholder="Código"><br>
 <input id="a4_nombre" placeholder="Nombre"><br>
 <input id="a4_precio" type="number" placeholder="Precio"><br>
 <input id="a4_cantidad" type="number" placeholder="Cantidad"><br>
 
-<button class="btn-qr" onclick="generarA4()">Generar A4</button>
-<button onclick="imprimirA4()">Imprimir</button>
+<button class="btn-qr" onclick="generarA4()">Generar</button>
+<button onclick="window.print()">Imprimir</button>
 </div>
 
 <div id="a4Container">
@@ -116,11 +65,9 @@ font-size:12px;
 
 {% for p in productos %}
 <div class="item">
-
 <b>{{p.nombre}}</b><br>
-
 Stock: {{p.cantidad}} <br>
-Precio: $ {{p.precio}}
+$ {{p.precio}}
 
 <br>
 
@@ -128,87 +75,47 @@ Precio: $ {{p.precio}}
 <button class="btn-sum">+</button>
 </a>
 
-<form action="/vender" method="POST" style="display:inline;">
-<input type="hidden" name="codigo" value="{{p.codigo}}">
-<button class="btn-sell">Vender</button>
-</form>
-
-<button class="btn-qr"
-onclick="generarQR('{{p.codigo}}','{{p.nombre}}',{{p.precio}})">
-QR
-</button>
+<a href="/carrito/{{p.codigo}}">
+<button class="btn-sell">Agregar</button>
+</a>
 
 </div>
 {% endfor %}
-
 </div>
 
-<div id="qrModal" style="display:none;background:black;position:fixed;width:100%;height:100%;top:0;left:0;">
-<div style="background:white;color:black;margin:100px auto;padding:20px;width:300px;">
-<h3 id="nombre"></h3>
-<div id="qrcode"></div>
-<p id="precio"></p>
+<div class="card">
+<h3>🛒 Carrito</h3>
 
-<button onclick="window.print()">🖨 Imprimir</button>
-<button onclick="cerrar()">Cerrar</button>
-</div>
+{% for item in carrito %}
+<p>{{item.nombre}} - ${{item.precio}}</p>
+{% endfor %}
+
+<a href="/finalizar">
+<button class="btn-add">Finalizar compra</button>
+</a>
 </div>
 
 <script>
-function generarQR(c,n,p){
-let data = c + "|" + n + "|" + p;
-
-document.getElementById("qrModal").style.display="block";
-document.getElementById("nombre").innerText=n;
-document.getElementById("precio").innerText="$"+p;
-
-document.getElementById("qrcode").innerHTML="";
-new QRCode(document.getElementById("qrcode"), data);
-}
-
-function generarQRManual(){
-let c = document.getElementById("qr_codigo").value;
-let n = document.getElementById("qr_nombre").value;
-let p = document.getElementById("qr_precio").value;
-
-generarQR(c,n,p);
-}
-
 function generarA4(){
-let c = document.getElementById("a4_codigo").value;
-let n = document.getElementById("a4_nombre").value;
-let p = document.getElementById("a4_precio").value;
-let cantidad = parseInt(document.getElementById("a4_cantidad").value);
+let c = a4_codigo.value;
+let n = a4_nombre.value;
+let p = a4_precio.value;
+let cantidad = parseInt(a4_cantidad.value);
 
 let grid = document.getElementById("a4Grid");
 grid.innerHTML="";
 
-let data = c + "|" + n + "|" + p;
+let data = c+"|"+n+"|"+p;
 
 for(let i=0;i<cantidad;i++){
 let div = document.createElement("div");
 div.className="label";
-
-div.innerHTML = `
-<div id="qr${i}"></div>
-<p>${n}</p>
-<p>$${p}</p>
-`;
-
+div.innerHTML=`<div id="qr${i}"></div><p>${n}</p><p>$${p}</p>`;
 grid.appendChild(div);
-
 new QRCode(div.querySelector(`#qr${i}`), data);
 }
 
-document.getElementById("a4Container").style.display="block";
-}
-
-function imprimirA4(){
-window.print();
-}
-
-function cerrar(){
-document.getElementById("qrModal").style.display="none";
+a4Container.style.display="block";
 }
 </script>
 

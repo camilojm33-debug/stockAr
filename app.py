@@ -33,6 +33,14 @@ def init_db():
         fecha TEXT
     )""")
 
+    # 🔄 sync
+    c.execute("""CREATE TABLE IF NOT EXISTS sync (
+        id INTEGER PRIMARY KEY,
+        tipo TEXT,
+        dato TEXT,
+        fecha TEXT
+    )""")
+
     conn.commit()
     conn.close()
 
@@ -68,7 +76,7 @@ def register():
 
     return render_template("register.html")
 
-# HOME (TODO ORIGINAL)
+# HOME
 @app.route('/')
 def index():
     if 'user_id' not in session:
@@ -90,14 +98,20 @@ def index():
     total = sum([v[0] for v in ventas])
     cantidad = len(ventas)
 
+    carrito = session.get("carrito", [])
+
+    # 🚨 ALERTAS STOCK
+    alertas = [p for p in productos if p[3] <= 3]
+
     return render_template("index.html",
         productos=productos,
-        carrito=session.get("carrito", []),
+        carrito=carrito,
         total_hoy=total,
-        cantidad_hoy=cantidad
+        cantidad_hoy=cantidad,
+        alertas=alertas
     )
 
-# 🔥 RESUMEN NUEVO
+# 🏆 RESUMEN
 @app.route('/resumen')
 def resumen():
     uid = session['user_id']
@@ -113,26 +127,20 @@ def resumen():
     total = sum([v[1] for v in ventas])
     cantidad = len(ventas)
 
-    ventas_por_dia = {}
-    for v in ventas:
-        dia = v[2].split(" ")[0]
-        ventas_por_dia[dia] = ventas_por_dia.get(dia, 0) + v[1]
+    mes_actual = datetime.now().strftime("%m/%Y")
 
-    dias = list(ventas_por_dia.keys())
-    montos = list(ventas_por_dia.values())
+    ventas_mes = [v for v in ventas if mes_actual in v[2]]
 
-    productos_count = {}
-    for v in ventas:
-        productos_count[v[0]] = productos_count.get(v[0], 0) + 1
+    ranking = {}
+    for v in ventas_mes:
+        ranking[v[0]] = ranking.get(v[0], 0) + 1
 
-    top_productos = sorted(productos_count.items(), key=lambda x: x[1], reverse=True)[:5]
+    ranking_mensual = sorted(ranking.items(), key=lambda x: x[1], reverse=True)
 
     return render_template("resumen.html",
         total=total,
         cantidad=cantidad,
-        dias=dias,
-        montos=montos,
-        top_productos=top_productos
+        ranking_mensual=ranking_mensual
     )
 
 # PRODUCTOS
@@ -207,9 +215,16 @@ def finalizar():
         c.execute("UPDATE productos SET cantidad=cantidad-1 WHERE codigo=? AND usuario_id=?",
                   (item["codigo"],uid))
 
+        # 🔄 sync
+        c.execute("INSERT INTO sync (tipo,dato,fecha) VALUES (?,?,?)",
+                  ("venta", item["nombre"], datetime.now().strftime("%Y-%m-%d %H:%M")))
+
     conn.commit()
     conn.close()
 
     session["carrito"] = []
 
     return render_template("ticket.html", carrito=carrito, total=total, fecha=fecha)
+
+if __name__ == '__main__':
+    app.run()

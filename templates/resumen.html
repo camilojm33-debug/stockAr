@@ -15,31 +15,20 @@ body{background:#020617;color:white;text-align:center;font-family:Arial;}
 <h2>📊 Resumen</h2>
 
 <div class="card">
-<p>Total: $ {{total}}</p>
-<p>Ventas: {{cantidad}}</p>
+<p>💰 Total: $ {{total}}</p>
+<p>🧾 Ventas: {{cantidad}}</p>
 </div>
 
 <div class="card">
-<canvas id="grafico"></canvas>
-</div>
+<h3>🏆 Ranking mensual</h3>
 
-<div class="card">
-{% for p in top_productos %}
-<p>{{p[0]}} - {{p[1]}}</p>
+{% for r in ranking_mensual %}
+<p>{{r[0]}} - {{r[1]}} ventas</p>
 {% endfor %}
+
 </div>
 
 <a href="/">⬅ Volver</a>
-
-<script>
-new Chart(document.getElementById("grafico"), {
- type:"line",
- data:{
-  labels: {{ dias | tojson }},
-  datasets:[{data: {{ montos | tojson }}}]
- }
-});
-</script>
 
 </body>
 </html>

@@ -4,10 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- PWA -->
 <link rel="manifest" href="/static/manifest.json">
 
-<!-- LIBRERÍAS -->
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
@@ -31,7 +29,6 @@ box-shadow:0 10px 30px rgba(0,0,0,0.6);
 .descripcion{
 font-size:12px;
 color:#94a3b8;
-margin-bottom:10px;
 }
 
 input {
@@ -83,7 +80,6 @@ padding:10px;
 text-align:center;
 }
 
-/* MODAL */
 #qrModal {
 position:fixed;
 top:0;
@@ -102,12 +98,6 @@ color:black;
 padding:20px;
 border-radius:10px;
 }
-
-@media(min-width:768px){
-.grid{
-grid-template-columns: repeat(4,1fr);
-}
-}
 </style>
 </head>
 
@@ -115,7 +105,7 @@ grid-template-columns: repeat(4,1fr);
 
 <h2>📦 stockAr</h2>
 
-<!-- 🔥 BOTÓN RESUMEN -->
+<!-- 📊 RESUMEN -->
 <a href="/resumen">
 <button class="btn-qr">📊 Ver resumen</button>
 </a>
@@ -124,10 +114,22 @@ grid-template-columns: repeat(4,1fr);
 <button class="btn-qr">📊 Historial</button>
 </a>
 
+<!-- 🚨 ALERTAS -->
+<div class="card">
+<h3>🚨 Stock bajo</h3>
+
+{% for p in alertas %}
+<p style="color:red;">⚠ {{p[1]}} ({{p[3]}} unidades)</p>
+{% endfor %}
+
+{% if alertas|length == 0 %}
+<p class="descripcion">Todo el stock está OK</p>
+{% endif %}
+</div>
+
 <!-- DASHBOARD -->
 <div class="card">
 <h3>📊 Dashboard</h3>
-<p class="descripcion">Resumen del día</p>
 <p>💰 $ {{total_hoy}}</p>
 <p>🧾 {{cantidad_hoy}} ventas</p>
 </div>

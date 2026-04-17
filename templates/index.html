@@ -1,288 +1,45 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% extends "base.html" %}
 
-<link rel="manifest" href="/static/manifest.json">
-<meta name="theme-color" content="#020617">
+{% block content %}
 
-<script src="https://unpkg.com/html5-qrcode"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
-<style>
-body {
-background:linear-gradient(135deg,#020617,#0f172a);
-color:white;
-font-family:Arial;
-margin:0;
-text-align:center;
-}
-
-.card {
-background:#0f172a;
-padding:15px;
-margin:10px;
-border-radius:15px;
-box-shadow:0 10px 30px rgba(0,0,0,0.6);
-}
-
-.card h3{
-color:#a855f7;
-}
-
-.descripcion{
-font-size:13px;
-color:#94a3b8;
-margin-bottom:10px;
-}
-
-input {
-padding:10px;
-margin:5px;
-border-radius:8px;
-border:none;
-width:90%;
-}
-
-button {
-padding:12px;
-margin:5px;
-border:none;
-border-radius:10px;
-font-weight:bold;
-cursor:pointer;
-width:90%;
-}
-
-.btn-add{background:#22c55e;}
-.btn-sell{background:#ef4444;}
-.btn-qr{background:#a855f7;}
-.btn-install{background:#f59e0b;}
-
-.item {
-background:#1e293b;
-padding:12px;
-margin-top:10px;
-border-radius:10px;
-}
-</style>
-</head>
-
-<body>
-
-<h2>📦 stockAr</h2>
-
-<!-- GUÍA -->
-<div class="card">
-<h3>🚀 Cómo usar la app</h3>
-<p class="descripcion">
-Agregá productos → generá QR → escaneá o vendé → finalizá la venta
-</p>
-</div>
-
-<!-- INSTALAR -->
-<div class="card">
-<h3>📲 Instalar app</h3>
-<p class="descripcion">Guardá esta app en tu celular como si fuera una aplicación real</p>
-
-<button id="installBtn" class="btn-install">
-Instalar aplicación
-</button>
-</div>
-
-<!-- RESUMEN -->
-<div class="card">
-<h3>📊 Estadísticas</h3>
-<p class="descripcion">Accedé al resumen de ventas y rendimiento del negocio</p>
-
-<a href="/resumen">
-<button class="btn-qr">Ver estadísticas</button>
-</a>
-</div>
-
-<!-- NEGOCIO -->
-<div class="card">
-<h3>💡 Estado del negocio</h3>
-<p class="descripcion">Visualizá el dinero generado hasta el momento</p>
-
-<p>Total vendido: $ {{total_hoy}}</p>
-</div>
-
-<!-- ALERTAS -->
-<div class="card">
-<h3>🚨 Stock bajo</h3>
-<p class="descripcion">Productos que están por agotarse</p>
-
-{% for p in alertas %}
-<p style="color:red;">⚠ {{p[1]}} ({{p[3]}} unidades)</p>
-{% endfor %}
-
-{% if alertas|length == 0 %}
-<p>Todo el stock está correcto 👍</p>
-{% endif %}
-</div>
-
-<!-- DASHBOARD -->
-<div class="card">
-<h3>📊 Dashboard</h3>
-<p class="descripcion">Resumen rápido de ventas del día</p>
-
-<p>💰 $ {{total_hoy}}</p>
-<p>🧾 {{cantidad_hoy}} ventas</p>
-</div>
-
-<!-- SCANNER -->
-<div class="card">
-<h3>📷 Escanear producto</h3>
-<p class="descripcion">Escaneá un código QR para vender automáticamente</p>
-
-<div id="reader"></div>
-</div>
-
-<!-- AGREGAR -->
 <div class="card">
 <h3>➕ Agregar producto</h3>
-<p class="descripcion">Cargá nuevos productos al inventario</p>
 
-<form action="/agregar" method="POST" onsubmit="alert('Producto agregado correctamente ✅')">
-<input name="codigo" placeholder="Código del producto"><br>
-<input name="nombre" placeholder="Nombre del producto"><br>
+<form action="/agregar" method="POST">
+<input name="codigo" placeholder="Código"><br>
+<input name="nombre" placeholder="Nombre"><br>
 <input name="categoria" placeholder="Categoría"><br>
-<input name="cantidad" type="number" placeholder="Cantidad inicial"><br>
-<input name="precio" type="number" placeholder="Precio de venta"><br>
+<input name="cantidad" placeholder="Cantidad"><br>
+<input name="precio" placeholder="Precio"><br>
 
-<button class="btn-add">Guardar producto</button>
+<button>Guardar</button>
 </form>
 </div>
 
-<!-- QR -->
-<div class="card">
-<h3>🏷 Generar QR</h3>
-<p class="descripcion">Creá etiquetas QR para imprimir y pegar en productos</p>
-
-<input id="qr_codigo" placeholder="Código"><br>
-<input id="qr_nombre" placeholder="Nombre"><br>
-<input id="qr_precio" placeholder="Precio"><br>
-
-<button class="btn-qr" onclick="generarQRManual()">Generar código QR</button>
-</div>
-
-<!-- INVENTARIO -->
 <div class="card">
 <h3>📋 Inventario</h3>
-<p class="descripcion">Listado completo de productos disponibles</p>
 
 {% for p in productos %}
-<div class="item">
-
-<b>{{p[1]}}</b>
-
-<div style="margin-top:5px;">
-<span style="color:#22c55e;">Stock disponible: {{p[3]}}</span>
-</div>
-
-<div style="font-size:18px;font-weight:bold;">
-Precio: $ {{p[4]}}
-</div>
-
-<p class="descripcion">Venta rápida del producto</p>
+<p>{{p[1]}} - ${{p[4]}}</p>
 
 <a href="/carrito/{{p[0]}}">
-<button class="btn-sell" onclick="alert('Producto agregado al carrito 💰')">
-⚡ Vender ahora
-</button>
+<button>Vender</button>
 </a>
 
-<p class="descripcion">Generar etiqueta QR de este producto</p>
-
-<button class="btn-qr"
-onclick="generarQR('{{p[0]}}','{{p[1]}}',{{p[4]}})">
-Generar QR
-</button>
-
-</div>
 {% endfor %}
 </div>
 
-<!-- CARRITO -->
 <div class="card">
 <h3>🛒 Carrito</h3>
-<p class="descripcion">Productos listos para cobrar</p>
 
-{% for item in carrito %}
-<p>{{item.nombre}} - ${{item.precio}}</p>
+{% for i in carrito %}
+<p>{{i.nombre}} - ${{i.precio}}</p>
 {% endfor %}
 
 <a href="/finalizar">
-<button onclick="notificar()" class="btn-add">
-💰 Finalizar venta
-</button>
+<button>Finalizar</button>
 </a>
 
-<p class="descripcion">Genera ticket automáticamente al finalizar</p>
 </div>
 
-<!-- MODAL QR -->
-<div id="qrModal" style="display:none;">
-<div style="background:white;color:black;padding:20px;border-radius:10px;">
-<h3 id="nombre"></h3>
-<div id="qrcode"></div>
-<p id="precio"></p>
-
-<button onclick="window.print()">Imprimir etiqueta</button>
-<button onclick="cerrar()">Cerrar</button>
-</div>
-</div>
-
-<script>
-// NOTIFICACIÓN
-function notificar(){
- alert("Venta realizada con éxito 💰");
-}
-
-// INSTALAR APP
-let deferredPrompt;
-
-window.addEventListener('beforeinstallprompt', (e) => {
- e.preventDefault();
- deferredPrompt = e;
-});
-
-installBtn.addEventListener("click", () => {
- if(deferredPrompt){
-   deferredPrompt.prompt();
- }
-});
-
-// QR
-function generarQR(c,n,p){
-let data=c+"|"+n+"|"+p;
-qrModal.style.display="flex";
-nombre.innerText=n;
-precio.innerText="$"+p;
-qrcode.innerHTML="";
-new QRCode(qrcode,data);
-}
-
-function generarQRManual(){
-generarQR(qr_codigo.value,qr_nombre.value,qr_precio.value);
-}
-
-function cerrar(){
-qrModal.style.display="none";
-}
-
-// SCANNER
-let scanner=new Html5QrcodeScanner("reader",{fps:10,qrbox:250});
-scanner.render(code=>{
-let codigo = code.includes("|") ? code.split("|")[0] : code;
-location="/scan/"+codigo;
-});
-
-// AUTO REFRESH
-setInterval(()=>{ location.reload(); },5000);
-</script>
-
-</body>
-</html>
+{% endblock %}

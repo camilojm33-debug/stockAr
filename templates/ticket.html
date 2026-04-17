@@ -1,26 +1,18 @@
 <!DOCTYPE html>
 <html>
-<body style="text-align:center;font-family:monospace;">
+<body style="text-align:center">
 
-<h2>🧾 stockAr</h2>
-<p>-------------------</p>
+<h2>🧾 Ticket</h2>
 
-{% for item in venta.items %}
-<p>{{item.nombre}} - ${{item.precio}}</p>
+{% for i in venta.items %}
+<p>{{i.nombre}} - ${{i.precio}}</p>
 {% endfor %}
 
-<p>-------------------</p>
-<p><b>Total: ${{venta.total}}</b></p>
-<p>{{venta.fecha}}</p>
+<p>Total: {{venta.total}}</p>
 
-<button onclick="window.print()">🖨 Imprimir</button>
-
-<a href="/ticket_pdf">
-<button>📄 Descargar PDF</button>
+<a href="/pdf">
+<button>PDF</button>
 </a>
-
-<br><br>
-<a href="/">Volver</a>
 
 </body>
 </html>

@@ -23,6 +23,12 @@ border-radius:15px;
 box-shadow:0 0 10px rgba(0,0,0,0.5);
 }
 
+.descripcion{
+font-size:13px;
+color:#94a3b8;
+margin-bottom:10px;
+}
+
 input {
 padding:10px;
 margin:5px;
@@ -70,7 +76,6 @@ padding:10px;
 text-align:center;
 }
 
-/* MODAL QR */
 #qrModal {
 position:fixed;
 top:0;
@@ -96,11 +101,14 @@ border-radius:10px;
 
 <h2>📦 stockAr</h2>
 
-<a href="/historial"><button class="btn-qr">📊 Historial</button></a>
+<a href="/historial">
+<button class="btn-qr">📊 Historial</button>
+</a>
 
 <!-- DASHBOARD -->
 <div class="card">
 <h3>📊 Dashboard</h3>
+<p class="descripcion">Resumen rápido de tus ventas del día.</p>
 <p>💰 Total hoy: $ {{total_hoy}}</p>
 <p>🧾 Ventas: {{cantidad_hoy}}</p>
 </div>
@@ -108,12 +116,15 @@ border-radius:10px;
 <!-- SCANNER -->
 <div class="card">
 <h3>📷 Escanear QR</h3>
+<p class="descripcion">Escaneá un producto para agregarlo automáticamente al carrito.</p>
 <div id="reader"></div>
 </div>
 
 <!-- AGREGAR PRODUCTO -->
 <div class="card">
 <h3>➕ Producto</h3>
+<p class="descripcion">Cargá nuevos productos a tu inventario con código, nombre, categoría y precio.</p>
+
 <form action="/agregar" method="POST">
 <input name="codigo" placeholder="Código" required><br>
 <input name="nombre" placeholder="Nombre" required><br>
@@ -127,15 +138,20 @@ border-radius:10px;
 <!-- QR MANUAL -->
 <div class="card">
 <h3>🏷 Generar QR</h3>
+<p class="descripcion">Creá un código QR para imprimir y pegar en tus productos.</p>
+
 <input id="qr_codigo" placeholder="Código"><br>
 <input id="qr_nombre" placeholder="Nombre"><br>
 <input id="qr_precio" placeholder="Precio"><br>
+
 <button class="btn-qr" onclick="generarQRManual()">Generar QR</button>
 </div>
 
 <!-- QR A4 -->
 <div class="card">
 <h3>🖨 QR A4</h3>
+<p class="descripcion">Generá múltiples etiquetas QR listas para imprimir en hoja A4.</p>
+
 <input id="a4_codigo" placeholder="Código"><br>
 <input id="a4_nombre" placeholder="Nombre"><br>
 <input id="a4_precio" placeholder="Precio"><br>
@@ -152,6 +168,7 @@ border-radius:10px;
 <!-- INVENTARIO -->
 <div class="card">
 <h3>📋 Inventario</h3>
+<p class="descripcion">Lista de todos tus productos. Podés sumar stock, vender o generar QR.</p>
 
 {% for p in productos %}
 <div class="item">
@@ -182,6 +199,7 @@ QR
 <!-- CARRITO -->
 <div class="card">
 <h3>🛒 Carrito</h3>
+<p class="descripcion">Productos listos para vender. Al finalizar se genera el ticket.</p>
 
 {% for item in carrito %}
 <p>{{item.nombre}} - ${{item.precio}}</p>
@@ -252,7 +270,7 @@ new QRCode(div.querySelector(`#qr${i}`),data);
 a4Container.style.display="block";
 }
 
-// SCANNER QR REAL
+// SCANNER
 let scanner=new Html5QrcodeScanner("reader",{fps:10,qrbox:250});
 
 scanner.render(code=>{

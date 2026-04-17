@@ -56,6 +56,7 @@ def login():
 
     return render_template("login.html")
 
+# REGISTER
 @app.route('/register', methods=['GET','POST'])
 def register():
     if request.method == 'POST':
@@ -92,7 +93,6 @@ def index():
     cantidad = len(ventas)
 
     carrito = session.get("carrito", [])
-
     alertas = [p for p in productos if p[3] <= 3]
 
     return render_template("index.html",
@@ -110,10 +110,8 @@ def resumen():
 
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
-
-    c.execute("SELECT nombre,precio,fecha FROM ventas WHERE usuario_id=?", (uid,))
+    c.execute("SELECT nombre,precio FROM ventas WHERE usuario_id=?", (uid,))
     ventas = c.fetchall()
-
     conn.close()
 
     total = sum([v[1] for v in ventas])
@@ -169,6 +167,11 @@ def carrito_add(codigo):
         session["carrito"] = carrito
 
     return redirect('/')
+
+# SCAN
+@app.route('/scan/<codigo>')
+def scan(codigo):
+    return carrito_add(codigo)
 
 # FINALIZAR
 @app.route('/finalizar')

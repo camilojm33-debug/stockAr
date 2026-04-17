@@ -1,7 +1,9 @@
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, request, redirect, session, send_file
 import sqlite3
 from datetime import datetime
 import json
+from reportlab.platypus import SimpleDocTemplate, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
 
 app = Flask(__name__)
 app.secret_key = "stockar_secret"
@@ -56,20 +58,6 @@ def login():
 
     return render_template("login.html")
 
-# REGISTER
-@app.route('/register', methods=['GET','POST'])
-def register():
-    if request.method == 'POST':
-        conn = sqlite3.connect("database.db")
-        c = conn.cursor()
-        c.execute("INSERT INTO usuarios (username,password) VALUES (?,?)",
-                  (request.form['username'], request.form['password']))
-        conn.commit()
-        conn.close()
-        return redirect('/login')
-
-    return render_template("register.html")
-
 # HOME
 @app.route('/')
 def index():
@@ -77,7 +65,6 @@ def index():
         return redirect('/login')
 
     uid = session['user_id']
-
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
@@ -91,7 +78,6 @@ def index():
 
     total = sum([v[0] for v in ventas])
     cantidad = len(ventas)
-
     carrito = session.get("carrito", [])
     alertas = [p for p in productos if p[3] <= 3]
 
@@ -103,33 +89,7 @@ def index():
         alertas=alertas
     )
 
-# RESUMEN
-@app.route('/resumen')
-def resumen():
-    uid = session['user_id']
-
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-    c.execute("SELECT nombre,precio FROM ventas WHERE usuario_id=?", (uid,))
-    ventas = c.fetchall()
-    conn.close()
-
-    total = sum([v[1] for v in ventas])
-    cantidad = len(ventas)
-
-    ranking = {}
-    for v in ventas:
-        ranking[v[0]] = ranking.get(v[0], 0) + 1
-
-    ranking_mensual = sorted(ranking.items(), key=lambda x: x[1], reverse=True)
-
-    return render_template("resumen.html",
-        total=total,
-        cantidad=cantidad,
-        ranking_mensual=ranking_mensual
-    )
-
-# AGREGAR
+# AGREGAR PRODUCTO
 @app.route('/agregar', methods=['POST'])
 def agregar():
     uid = session['user_id']
@@ -168,12 +128,7 @@ def carrito_add(codigo):
 
     return redirect('/')
 
-# SCAN
-@app.route('/scan/<codigo>')
-def scan(codigo):
-    return carrito_add(codigo)
-
-# FINALIZAR
+# FINALIZAR VENTA
 @app.route('/finalizar')
 def finalizar():
     uid = session['user_id']
@@ -206,5 +161,34 @@ def finalizar():
         }) + "\n")
 
     session["carrito"] = []
+    session["ultima_venta"] = {"items":carrito,"total":total,"fecha":fecha}
 
-    return render_template("ticket.html", carrito=carrito, total=total, fecha=fecha)
+    return redirect('/ticket')
+
+# TICKET HTML
+@app.route('/ticket')
+def ticket():
+    venta = session.get("ultima_venta")
+    return render_template("ticket.html", venta=venta)
+
+# TICKET PDF
+@app.route('/ticket_pdf')
+def ticket_pdf():
+    venta = session.get("ultima_venta")
+
+    doc = SimpleDocTemplate("ticket.pdf")
+    styles = getSampleStyleSheet()
+
+    contenido = []
+    contenido.append(Paragraph("stockAr", styles["Title"]))
+    contenido.append(Paragraph("----------------------", styles["Normal"]))
+
+    for item in venta["items"]:
+        contenido.append(Paragraph(f'{item["nombre"]} - ${item["precio"]}', styles["Normal"]))
+
+    contenido.append(Paragraph("----------------------", styles["Normal"]))
+    contenido.append(Paragraph(f'Total: ${venta["total"]}', styles["Normal"]))
+
+    doc.build(contenido)
+
+    return send_file("ticket.pdf", as_attachment=True)

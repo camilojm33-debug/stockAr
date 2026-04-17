@@ -2,7 +2,6 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- PWA -->
@@ -13,11 +12,11 @@
 
 <style>
 body {
-background:#020617;
+background:linear-gradient(135deg,#020617,#0f172a);
 color:white;
 font-family:Arial;
-text-align:center;
 margin:0;
+text-align:center;
 }
 
 .card {
@@ -25,6 +24,7 @@ background:#0f172a;
 padding:15px;
 margin:10px;
 border-radius:15px;
+box-shadow:0 10px 30px rgba(0,0,0,0.6);
 }
 
 .descripcion{
@@ -102,7 +102,6 @@ padding:20px;
 border-radius:10px;
 }
 
-/* RESPONSIVE */
 @media(min-width:768px){
 .grid{
 grid-template-columns: repeat(4,1fr);
@@ -149,10 +148,10 @@ grid-template-columns: repeat(4,1fr);
 </form>
 </div>
 
-<!-- QR -->
+<!-- QR MANUAL -->
 <div class="card">
 <h3>🏷 Generar QR</h3>
-<p class="descripcion">Crear etiquetas QR</p>
+<p class="descripcion">Crear etiqueta individual</p>
 
 <input id="qr_codigo" placeholder="Código"><br>
 <input id="qr_nombre" placeholder="Nombre"><br>
@@ -161,10 +160,10 @@ grid-template-columns: repeat(4,1fr);
 <button class="btn-qr" onclick="generarQRManual()">📱 Generar QR</button>
 </div>
 
-<!-- A4 -->
+<!-- QR A4 -->
 <div class="card">
 <h3>🖨 QR A4</h3>
-<p class="descripcion">Imprimir etiquetas</p>
+<p class="descripcion">Imprimir muchas etiquetas</p>
 
 <input id="a4_codigo" placeholder="Código"><br>
 <input id="a4_nombre" placeholder="Nombre"><br>
@@ -234,7 +233,7 @@ onclick="generarQR('{{p[0]}}','{{p[1]}}',{{p[4]}})">
 </div>
 
 <script>
-// NOTIFICACIONES
+// 🔔 NOTIFICACIONES
 if ("Notification" in window) {
  Notification.requestPermission();
 }
@@ -293,7 +292,7 @@ let codigo = code.includes("|") ? code.split("|")[0] : code;
 location="/scan/"+codigo;
 });
 
-// SERVICE WORKER (PWA)
+// 🌐 SERVICE WORKER
 if ('serviceWorker' in navigator) {
  navigator.serviceWorker.register('/static/service-worker.js')
 }

@@ -23,7 +23,8 @@ def init_db():
         nombre TEXT,
         categoria TEXT,
         cantidad INTEGER,
-        precio REAL
+        precio REAL,
+        updated_at TEXT
     )""")
 
     c.execute("""CREATE TABLE IF NOT EXISTS ventas (
@@ -45,15 +46,13 @@ def login():
     if request.method == 'POST':
         conn = sqlite3.connect("database.db")
         c = conn.cursor()
-
-        c.execute("SELECT id,rol FROM usuarios WHERE username=? AND password=?",
+        c.execute("SELECT id FROM usuarios WHERE username=? AND password=?",
                   (request.form['username'], request.form['password']))
         user = c.fetchone()
         conn.close()
 
         if user:
             session['user_id'] = user[0]
-            session['rol'] = user[1]
             return redirect('/')
 
     return render_template("login.html")
@@ -63,10 +62,8 @@ def register():
     if request.method == 'POST':
         conn = sqlite3.connect("database.db")
         c = conn.cursor()
-
         c.execute("INSERT INTO usuarios (username,password,rol) VALUES (?,?,?)",
                   (request.form['username'], request.form['password'], "admin"))
-
         conn.commit()
         conn.close()
         return redirect('/login')
@@ -102,21 +99,23 @@ def index():
         cantidad_hoy=cantidad
     )
 
-# RESTO (igual que ya tenías)
+# PRODUCTO
 @app.route('/agregar', methods=['POST'])
 def agregar():
     uid = session['user_id']
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
 
-    c.execute("""INSERT INTO productos (usuario_id,codigo,nombre,categoria,cantidad,precio)
-    VALUES (?,?,?,?,?,?)""",
+    c.execute("""INSERT INTO productos 
+    (usuario_id,codigo,nombre,categoria,cantidad,precio,updated_at)
+    VALUES (?,?,?,?,?,?,?)""",
     (uid,
      request.form['codigo'],
      request.form['nombre'],
      request.form['categoria'],
      request.form['cantidad'],
-     request.form['precio']))
+     request.form['precio'],
+     datetime.now().strftime("%Y-%m-%d %H:%M")))
 
     conn.commit()
     conn.close()
@@ -127,11 +126,15 @@ def sumar(codigo):
     uid = session['user_id']
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
-    c.execute("UPDATE productos SET cantidad=cantidad+1 WHERE codigo=? AND usuario_id=?", (codigo,uid))
+    c.execute("""UPDATE productos 
+                 SET cantidad=cantidad+1, updated_at=? 
+                 WHERE codigo=? AND usuario_id=?""",
+                 (datetime.now().strftime("%Y-%m-%d %H:%M"), codigo, uid))
     conn.commit()
     conn.close()
     return redirect('/')
 
+# CARRITO
 @app.route('/carrito/<codigo>')
 def carrito_add(codigo):
     uid = session['user_id']
@@ -153,6 +156,7 @@ def carrito_add(codigo):
 def scan(codigo):
     return carrito_add(codigo)
 
+# FINALIZAR
 @app.route('/finalizar')
 def finalizar():
     uid = session['user_id']
@@ -170,8 +174,10 @@ def finalizar():
         c.execute("INSERT INTO ventas (usuario_id,nombre,precio,fecha) VALUES (?,?,?,?)",
                   (uid,item["nombre"],item["precio"],fecha))
 
-        c.execute("UPDATE productos SET cantidad=cantidad-1 WHERE codigo=? AND usuario_id=?",
-                  (item["codigo"],uid))
+        c.execute("""UPDATE productos 
+                     SET cantidad=cantidad-1, updated_at=? 
+                     WHERE codigo=? AND usuario_id=?""",
+                     (datetime.now().strftime("%Y-%m-%d %H:%M"), item["codigo"], uid))
 
     conn.commit()
     conn.close()
@@ -180,6 +186,7 @@ def finalizar():
 
     return render_template("ticket.html", carrito=carrito, total=total, fecha=fecha)
 
+# HISTORIAL
 @app.route('/historial')
 def historial():
     uid = session['user_id']

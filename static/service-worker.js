@@ -1,5 +1,15 @@
+const CACHE_NAME = "stockar-cache-v1";
+
 self.addEventListener("install", e => {
-  console.log("Service Worker instalado");
+ e.waitUntil(
+   caches.open(CACHE_NAME).then(cache => {
+     return cache.addAll(["/"]);
+   })
+ );
 });
 
-self.addEventListener("fetch", e => {});
+self.addEventListener("fetch", e => {
+ e.respondWith(
+   caches.match(e.request).then(res => res || fetch(e.request))
+ );
+});

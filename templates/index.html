@@ -4,10 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- PWA -->
 <link rel="manifest" href="/static/manifest.json">
 
+<!-- LIBRERÍAS -->
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body {
@@ -72,6 +75,7 @@ transition:0.3s;
 background:#334155;
 }
 
+/* A4 */
 #a4Container {
 display:none;
 background:white;
@@ -91,6 +95,7 @@ padding:10px;
 text-align:center;
 }
 
+/* MODAL */
 #qrModal {
 position:fixed;
 top:0;
@@ -108,6 +113,13 @@ background:white;
 color:black;
 padding:20px;
 border-radius:10px;
+}
+
+/* GRÁFICO */
+canvas{
+background:white;
+border-radius:10px;
+padding:10px;
 }
 
 @media(min-width:768px){
@@ -134,17 +146,21 @@ grid-template-columns: repeat(4,1fr);
 <p>🧾 {{cantidad_hoy}} ventas</p>
 </div>
 
+<!-- 📊 GRÁFICO -->
+<div class="card">
+<h3>📊 Ventas</h3>
+<canvas id="graficoVentas"></canvas>
+</div>
+
 <!-- SCANNER -->
 <div class="card">
 <h3>📷 Escanear QR</h3>
-<p class="descripcion">Escaneá para vender rápido</p>
 <div id="reader"></div>
 </div>
 
 <!-- PRODUCTO -->
 <div class="card">
 <h3>➕ Producto</h3>
-<p class="descripcion">Agregar productos</p>
 
 <form action="/agregar" method="POST">
 <input name="codigo" placeholder="Código"><br>
@@ -160,21 +176,21 @@ grid-template-columns: repeat(4,1fr);
 <div class="card">
 <h3>🏷 Generar QR</h3>
 
-<input id="qr_codigo" placeholder="Código"><br>
-<input id="qr_nombre" placeholder="Nombre"><br>
-<input id="qr_precio" placeholder="Precio"><br>
+<input id="qr_codigo"><br>
+<input id="qr_nombre"><br>
+<input id="qr_precio"><br>
 
-<button class="btn-qr" onclick="generarQRManual()">📱 Generar QR</button>
+<button class="btn-qr" onclick="generarQRManual()">📱 QR</button>
 </div>
 
 <!-- QR A4 -->
 <div class="card">
 <h3>🖨 QR A4</h3>
 
-<input id="a4_codigo" placeholder="Código"><br>
-<input id="a4_nombre" placeholder="Nombre"><br>
-<input id="a4_precio" placeholder="Precio"><br>
-<input id="a4_cantidad" placeholder="Cantidad"><br>
+<input id="a4_codigo"><br>
+<input id="a4_nombre"><br>
+<input id="a4_precio"><br>
+<input id="a4_cantidad"><br>
 
 <button class="btn-qr" onclick="generarA4()">📄 Generar</button>
 <button onclick="window.print()">🖨 Imprimir</button>
@@ -192,7 +208,6 @@ grid-template-columns: repeat(4,1fr);
 <div class="item">
 
 <b>{{p[1]}}</b><br>
-📦 {{p[2]}}<br>
 Stock: {{p[3]}}<br>
 $ {{p[4]}}<br>
 
@@ -249,6 +264,21 @@ function notificar(){
    new Notification("Venta realizada 💰");
  }
 }
+
+// 📊 GRÁFICO
+let ventas = {{ cantidad_hoy }};
+let total = {{ total_hoy }};
+
+new Chart(document.getElementById("graficoVentas"), {
+    type: "bar",
+    data: {
+        labels: ["Ventas", "Total"],
+        datasets: [{
+            label: "Resumen",
+            data: [ventas, total],
+        }]
+    }
+});
 
 // QR
 function generarQR(c,n,p){

@@ -1,14 +1,10 @@
-from flask import Flask, render_template, request, redirect, session, send_file
+from flask import Flask, render_template, request, redirect, session
 import sqlite3
 from datetime import datetime
-from reportlab.platypus import SimpleDocTemplate, Paragraph
-from reportlab.lib.styles import getSampleStyleSheet
-import io
 
 app = Flask(__name__)
 app.secret_key = "stockar_secret"
 
-# ---------------- DB ----------------
 def init_db():
     conn = sqlite3.connect("database.db")
     c = conn.cursor()
@@ -16,7 +12,8 @@ def init_db():
     c.execute("""CREATE TABLE IF NOT EXISTS usuarios (
         id INTEGER PRIMARY KEY,
         username TEXT,
-        password TEXT
+        password TEXT,
+        rol TEXT
     )""")
 
     c.execute("""CREATE TABLE IF NOT EXISTS productos (
@@ -42,20 +39,23 @@ def init_db():
 
 init_db()
 
-# ---------------- LOGIN ----------------
+# LOGIN
 @app.route('/login', methods=['GET','POST'])
 def login():
     if request.method == 'POST':
         conn = sqlite3.connect("database.db")
         c = conn.cursor()
-        c.execute("SELECT id FROM usuarios WHERE username=? AND password=?",
+
+        c.execute("SELECT id,rol FROM usuarios WHERE username=? AND password=?",
                   (request.form['username'], request.form['password']))
         user = c.fetchone()
         conn.close()
 
         if user:
             session['user_id'] = user[0]
+            session['rol'] = user[1]
             return redirect('/')
+
     return render_template("login.html")
 
 @app.route('/register', methods=['GET','POST'])
@@ -63,14 +63,17 @@ def register():
     if request.method == 'POST':
         conn = sqlite3.connect("database.db")
         c = conn.cursor()
-        c.execute("INSERT INTO usuarios (username,password) VALUES (?,?)",
-                  (request.form['username'], request.form['password']))
+
+        c.execute("INSERT INTO usuarios (username,password,rol) VALUES (?,?,?)",
+                  (request.form['username'], request.form['password'], "admin"))
+
         conn.commit()
         conn.close()
         return redirect('/login')
+
     return render_template("register.html")
 
-# ---------------- HOME ----------------
+# HOME
 @app.route('/')
 def index():
     if 'user_id' not in session:
@@ -99,7 +102,7 @@ def index():
         cantidad_hoy=cantidad
     )
 
-# ---------------- PRODUCTOS ----------------
+# RESTO (igual que ya tenías)
 @app.route('/agregar', methods=['POST'])
 def agregar():
     uid = session['user_id']
@@ -129,7 +132,6 @@ def sumar(codigo):
     conn.close()
     return redirect('/')
 
-# ---------------- CARRITO ----------------
 @app.route('/carrito/<codigo>')
 def carrito_add(codigo):
     uid = session['user_id']
@@ -151,7 +153,6 @@ def carrito_add(codigo):
 def scan(codigo):
     return carrito_add(codigo)
 
-# ---------------- FINALIZAR ----------------
 @app.route('/finalizar')
 def finalizar():
     uid = session['user_id']
@@ -179,33 +180,6 @@ def finalizar():
 
     return render_template("ticket.html", carrito=carrito, total=total, fecha=fecha)
 
-# ---------------- PDF ----------------
-@app.route('/ticket_pdf')
-def ticket_pdf():
-    carrito = session.get("carrito", [])
-    total = sum([item["precio"] for item in carrito])
-    fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
-
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer)
-
-    styles = getSampleStyleSheet()
-    elements = []
-
-    elements.append(Paragraph("Ticket stockAr", styles["Title"]))
-
-    for item in carrito:
-        elements.append(Paragraph(f"{item['nombre']} - ${item['precio']}", styles["Normal"]))
-
-    elements.append(Paragraph(f"Total: ${total}", styles["Heading2"]))
-    elements.append(Paragraph(fecha, styles["Normal"]))
-
-    doc.build(elements)
-
-    buffer.seek(0)
-    return send_file(buffer, as_attachment=True, download_name="ticket.pdf")
-
-# ---------------- HISTORIAL ----------------
 @app.route('/historial')
 def historial():
     uid = session['user_id']

@@ -5,6 +5,9 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- PWA -->
+<link rel="manifest" href="/static/manifest.json">
+
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
@@ -17,17 +20,11 @@ text-align:center;
 margin:0;
 }
 
-h2{
-font-size:22px;
-margin-top:10px;
-}
-
 .card {
 background:#0f172a;
 padding:15px;
 margin:10px;
 border-radius:15px;
-box-shadow:0 0 10px rgba(0,0,0,0.5);
 }
 
 .descripcion{
@@ -105,23 +102,6 @@ padding:20px;
 border-radius:10px;
 }
 
-/* TUTORIAL */
-#tutorial {
-position:fixed;
-bottom:10px;
-left:10px;
-right:10px;
-background:#111827;
-padding:15px;
-border-radius:10px;
-display:none;
-}
-
-.tutorial-btn{
-background:#22c55e;
-margin-top:10px;
-}
-
 /* RESPONSIVE */
 @media(min-width:768px){
 .grid{
@@ -135,8 +115,6 @@ grid-template-columns: repeat(4,1fr);
 
 <h2>📦 stockAr</h2>
 
-<button onclick="iniciarTutorial()" class="btn-qr">🎓 Tutorial</button>
-
 <a href="/historial">
 <button class="btn-qr">📊 Historial</button>
 </a>
@@ -144,7 +122,7 @@ grid-template-columns: repeat(4,1fr);
 <!-- DASHBOARD -->
 <div class="card">
 <h3>📊 Dashboard</h3>
-<p class="descripcion">📈 Resumen del día</p>
+<p class="descripcion">Resumen del día</p>
 <p>💰 $ {{total_hoy}}</p>
 <p>🧾 {{cantidad_hoy}} ventas</p>
 </div>
@@ -152,14 +130,14 @@ grid-template-columns: repeat(4,1fr);
 <!-- SCANNER -->
 <div class="card">
 <h3>📷 Escanear QR</h3>
-<p class="descripcion">📲 Escaneá para vender rápido</p>
+<p class="descripcion">Escaneá para vender rápido</p>
 <div id="reader"></div>
 </div>
 
 <!-- PRODUCTO -->
 <div class="card">
 <h3>➕ Producto</h3>
-<p class="descripcion">📦 Cargar productos</p>
+<p class="descripcion">Agregar productos al inventario</p>
 
 <form action="/agregar" method="POST">
 <input name="codigo" placeholder="Código"><br>
@@ -173,8 +151,8 @@ grid-template-columns: repeat(4,1fr);
 
 <!-- QR -->
 <div class="card">
-<h3>🏷 QR</h3>
-<p class="descripcion">📌 Crear etiquetas QR</p>
+<h3>🏷 Generar QR</h3>
+<p class="descripcion">Crear etiquetas QR</p>
 
 <input id="qr_codigo" placeholder="Código"><br>
 <input id="qr_nombre" placeholder="Nombre"><br>
@@ -186,7 +164,7 @@ grid-template-columns: repeat(4,1fr);
 <!-- A4 -->
 <div class="card">
 <h3>🖨 QR A4</h3>
-<p class="descripcion">🧾 Imprimir múltiples etiquetas</p>
+<p class="descripcion">Imprimir etiquetas</p>
 
 <input id="a4_codigo" placeholder="Código"><br>
 <input id="a4_nombre" placeholder="Nombre"><br>
@@ -204,7 +182,6 @@ grid-template-columns: repeat(4,1fr);
 <!-- INVENTARIO -->
 <div class="card">
 <h3>📋 Inventario</h3>
-<p class="descripcion">📦 Gestioná tus productos</p>
 
 {% for p in productos %}
 <div class="item">
@@ -234,18 +211,17 @@ onclick="generarQR('{{p[0]}}','{{p[1]}}',{{p[4]}})">
 <!-- CARRITO -->
 <div class="card">
 <h3>🛒 Carrito</h3>
-<p class="descripcion">💳 Venta actual</p>
 
 {% for item in carrito %}
 <p>{{item.nombre}} - ${{item.precio}}</p>
 {% endfor %}
 
 <a href="/finalizar">
-<button class="btn-add">💰 Finalizar</button>
+<button onclick="notificar()" class="btn-add">💰 Finalizar</button>
 </a>
 </div>
 
-<!-- MODAL -->
+<!-- MODAL QR -->
 <div id="qrModal">
 <div class="modal-content">
 <h3 id="nombre"></h3>
@@ -257,13 +233,18 @@ onclick="generarQR('{{p[0]}}','{{p[1]}}',{{p[4]}})">
 </div>
 </div>
 
-<!-- TUTORIAL -->
-<div id="tutorial">
-<p id="paso"></p>
-<button class="tutorial-btn" onclick="siguientePaso()">Siguiente</button>
-</div>
-
 <script>
+// NOTIFICACIONES
+if ("Notification" in window) {
+ Notification.requestPermission();
+}
+
+function notificar(){
+ if(Notification.permission==="granted"){
+   new Notification("Venta realizada 💰");
+ }
+}
+
 // QR
 function generarQR(c,n,p){
 let data=c+"|"+n+"|"+p;
@@ -312,30 +293,9 @@ let codigo = code.includes("|") ? code.split("|")[0] : code;
 location="/scan/"+codigo;
 });
 
-// TUTORIAL
-let pasos=[
-"Bienvenido a stockAr 👋",
-"Agregá productos acá",
-"Escaneá QR para vender",
-"Usá el carrito para finalizar",
-"Generá etiquetas QR"
-];
-
-let i=0;
-
-function iniciarTutorial(){
-tutorial.style.display="block";
-paso.innerText=pasos[i];
-}
-
-function siguientePaso(){
-i++;
-if(i<pasos.length){
-paso.innerText=pasos[i];
-}else{
-tutorial.style.display="none";
-i=0;
-}
+// SERVICE WORKER (PWA)
+if ('serviceWorker' in navigator) {
+ navigator.serviceWorker.register('/static/service-worker.js')
 }
 </script>
 

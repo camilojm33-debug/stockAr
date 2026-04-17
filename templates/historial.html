@@ -1,22 +1,10 @@
 <!DOCTYPE html>
 <html>
-<head>
-<meta charset="UTF-8">
-<style>
-body{background:#020617;color:white;text-align:center;}
-.card{background:#0f172a;margin:10px;padding:10px;border-radius:10px;}
-</style>
-</head>
-<body>
-
+<body style="text-align:center;">
 <h2>📊 Historial</h2>
 
 {% for v in ventas %}
-<div class="card">
-<p>{{v[0]}}</p>
-<p>$ {{v[1]}}</p>
-<p>{{v[2]}}</p>
-</div>
+<p>{{v[0]}} - ${{v[1]}} - {{v[2]}}</p>
 {% endfor %}
 
 <a href="/">Volver</a>

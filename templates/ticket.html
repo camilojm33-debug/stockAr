@@ -1,26 +1,15 @@
 <!DOCTYPE html>
 <html>
-<head>
-<meta charset="UTF-8">
-<style>
-body{font-family:monospace;text-align:center;}
-.ticket{width:260px;margin:auto;border:1px dashed black;padding:10px;}
-</style>
-</head>
-<body>
-
-<div class="ticket">
-<h2>🧾 stockAr</h2>
+<body style="text-align:center;">
+<h2>🧾 Ticket</h2>
 
 {% for item in carrito %}
 <p>{{item.nombre}} - ${{item.precio}}</p>
 {% endfor %}
 
-<p><b>Total: ${{total}}</b></p>
+<p>Total: ${{total}}</p>
 <p>{{fecha}}</p>
 
-<button onclick="window.print()">🖨</button>
-</div>
-
+<button onclick="window.print()">Imprimir</button>
 </body>
 </html>

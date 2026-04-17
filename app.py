@@ -10,28 +10,27 @@ def init_db():
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
 
-    # usuarios
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS usuarios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE,
-        password TEXT
+        password TEXT,
+        rol TEXT
     )
     """)
 
-    # productos
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS productos (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         usuario_id INTEGER,
         codigo TEXT,
         nombre TEXT,
+        categoria TEXT,
         cantidad INTEGER,
         precio REAL
     )
     """)
 
-    # ventas
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS ventas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,13 +53,14 @@ def login():
         conn = sqlite3.connect("database.db")
         cursor = conn.cursor()
 
-        cursor.execute("SELECT id FROM usuarios WHERE username=? AND password=?",
+        cursor.execute("SELECT id,rol FROM usuarios WHERE username=? AND password=?",
                        (request.form['username'], request.form['password']))
         user = cursor.fetchone()
         conn.close()
 
         if user:
             session['user_id'] = user[0]
+            session['rol'] = user[1]
             return redirect('/')
         else:
             return "Usuario incorrecto"
@@ -73,8 +73,8 @@ def register():
         conn = sqlite3.connect("database.db")
         cursor = conn.cursor()
 
-        cursor.execute("INSERT INTO usuarios (username,password) VALUES (?,?)",
-                       (request.form['username'], request.form['password']))
+        cursor.execute("INSERT INTO usuarios (username,password,rol) VALUES (?,?,?)",
+                       (request.form['username'], request.form['password'], "admin"))
 
         conn.commit()
         conn.close()
@@ -99,29 +99,31 @@ def index():
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
 
-    cursor.execute("SELECT codigo,nombre,cantidad,precio FROM productos WHERE usuario_id=?", (uid,))
+    cursor.execute("SELECT codigo,nombre,categoria,cantidad,precio FROM productos WHERE usuario_id=?", (uid,))
     productos = cursor.fetchall()
 
     cursor.execute("SELECT precio FROM ventas WHERE usuario_id=?", (uid,))
-    ventas_hoy = cursor.fetchall()
+    ventas = cursor.fetchall()
 
     conn.close()
 
     productos_lista = [
-        {"codigo": p[0], "nombre": p[1], "cantidad": p[2], "precio": p[3]}
+        {"codigo": p[0], "nombre": p[1], "categoria": p[2], "cantidad": p[3], "precio": p[4]}
         for p in productos
     ]
 
     carrito = session.get("carrito", [])
 
-    total_hoy = sum([v[0] for v in ventas_hoy])
-    cantidad_hoy = len(ventas_hoy)
+    total = sum([v[0] for v in ventas])
+    cantidad = len(ventas)
+    promedio = round(total / cantidad, 2) if cantidad > 0 else 0
 
     return render_template("index.html",
                            productos=productos_lista,
                            carrito=carrito,
-                           total_hoy=total_hoy,
-                           cantidad_hoy=cantidad_hoy)
+                           total_hoy=total,
+                           cantidad_hoy=cantidad,
+                           promedio=promedio)
 
 # ---------------- PRODUCTOS ----------------
 @app.route('/agregar', methods=['POST'])
@@ -132,12 +134,13 @@ def agregar():
     cursor = conn.cursor()
 
     cursor.execute("""
-    INSERT INTO productos (usuario_id,codigo,nombre,cantidad,precio)
-    VALUES (?,?,?,?,?)
+    INSERT INTO productos (usuario_id,codigo,nombre,categoria,cantidad,precio)
+    VALUES (?,?,?,?,?,?)
     """, (
         uid,
         request.form['codigo'],
         request.form['nombre'],
+        request.form['categoria'],
         int(request.form['cantidad']),
         float(request.form['precio'])
     ))
@@ -152,7 +155,7 @@ def sumar(codigo):
     uid = session['user_id']
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
-    cursor.execute("UPDATE productos SET cantidad=cantidad+1 WHERE codigo=? AND usuario_id=?",(codigo,uid))
+    cursor.execute("UPDATE productos SET cantidad=cantidad+1 WHERE codigo=? AND usuario_id=?", (codigo,uid))
     conn.commit()
     conn.close()
     return redirect('/')
@@ -164,8 +167,10 @@ def carrito_add(codigo):
 
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
+
     cursor.execute("SELECT nombre,precio FROM productos WHERE codigo=? AND usuario_id=?", (codigo,uid))
     p = cursor.fetchone()
+
     conn.close()
 
     if p:

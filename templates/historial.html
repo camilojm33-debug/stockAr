@@ -1,13 +1,50 @@
 <!DOCTYPE html>
-<html>
-<body style="text-align:center;">
-<h2>📊 Historial</h2>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
 
+<style>
+body{
+background:#020617;
+color:white;
+font-family:Arial;
+text-align:center;
+}
+
+.card{
+background:#0f172a;
+margin:10px;
+padding:15px;
+border-radius:10px;
+box-shadow:0 5px 20px rgba(0,0,0,0.5);
+}
+
+.total{
+font-size:20px;
+margin:15px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>📊 Historial de ventas</h2>
+
+{% set total = 0 %}
 {% for v in ventas %}
-<p>{{v[0]}} - ${{v[1]}} - {{v[2]}}</p>
+<div class="card">
+<p><b>{{v[0]}}</b></p>
+<p>$ {{v[1]}}</p>
+<p>{{v[2]}}</p>
+</div>
+{% set total = total + v[1] %}
 {% endfor %}
 
-<a href="/">Volver</a>
+<div class="total">
+💰 Total vendido: $ {{total}}
+</div>
+
+<a href="/">⬅ Volver</a>
 
 </body>
 </html>

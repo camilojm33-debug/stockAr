@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- PWA -->
 <link rel="manifest" href="/static/manifest.json">
 
 <script src="https://unpkg.com/html5-qrcode"></script>
@@ -25,6 +24,11 @@ padding:15px;
 margin:10px;
 border-radius:15px;
 box-shadow:0 10px 30px rgba(0,0,0,0.6);
+transition:0.3s;
+}
+
+.card:hover{
+transform:scale(1.02);
 }
 
 .descripcion{
@@ -61,6 +65,11 @@ background:#1e293b;
 padding:10px;
 margin-top:10px;
 border-radius:10px;
+transition:0.3s;
+}
+
+.item:hover{
+background:#334155;
 }
 
 #a4Container {
@@ -82,7 +91,6 @@ padding:10px;
 text-align:center;
 }
 
-/* MODAL */
 #qrModal {
 position:fixed;
 top:0;
@@ -136,7 +144,7 @@ grid-template-columns: repeat(4,1fr);
 <!-- PRODUCTO -->
 <div class="card">
 <h3>➕ Producto</h3>
-<p class="descripcion">Agregar productos al inventario</p>
+<p class="descripcion">Agregar productos</p>
 
 <form action="/agregar" method="POST">
 <input name="codigo" placeholder="Código"><br>
@@ -151,7 +159,6 @@ grid-template-columns: repeat(4,1fr);
 <!-- QR MANUAL -->
 <div class="card">
 <h3>🏷 Generar QR</h3>
-<p class="descripcion">Crear etiqueta individual</p>
 
 <input id="qr_codigo" placeholder="Código"><br>
 <input id="qr_nombre" placeholder="Nombre"><br>
@@ -163,7 +170,6 @@ grid-template-columns: repeat(4,1fr);
 <!-- QR A4 -->
 <div class="card">
 <h3>🖨 QR A4</h3>
-<p class="descripcion">Imprimir muchas etiquetas</p>
 
 <input id="a4_codigo" placeholder="Código"><br>
 <input id="a4_nombre" placeholder="Nombre"><br>
@@ -292,7 +298,7 @@ let codigo = code.includes("|") ? code.split("|")[0] : code;
 location="/scan/"+codigo;
 });
 
-// 🌐 SERVICE WORKER
+// SERVICE WORKER
 if ('serviceWorker' in navigator) {
  navigator.serviceWorker.register('/static/service-worker.js')
 }

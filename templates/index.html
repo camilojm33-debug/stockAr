@@ -65,11 +65,6 @@ background:#1e293b;
 padding:12px;
 margin-top:10px;
 border-radius:10px;
-transition:0.3s;
-}
-
-.item:hover{
-background:#334155;
 }
 </style>
 </head>
@@ -78,87 +73,105 @@ background:#334155;
 
 <h2>📦 stockAr</h2>
 
-<!-- 🚀 GUÍA -->
+<!-- GUÍA -->
 <div class="card">
-<h3>🚀 Cómo usar</h3>
+<h3>🚀 Cómo usar la app</h3>
 <p class="descripcion">
-1️⃣ Agregá productos<br>
-2️⃣ Generá QR<br>
-3️⃣ Escaneá o vendé<br>
-4️⃣ Finalizá venta
+Agregá productos → generá QR → escaneá o vendé → finalizá la venta
 </p>
 </div>
 
-<!-- 📲 INSTALAR -->
-<button id="installBtn" class="btn-install">
-📲 Instalar App
-</button>
-
-<!-- 📊 RESUMEN -->
-<a href="/resumen">
-<button class="btn-qr">📊 Ver estadísticas</button>
-</a>
-
-<!-- 💡 VALOR -->
+<!-- INSTALAR -->
 <div class="card">
-<h3>💡 Tu negocio</h3>
+<h3>📲 Instalar app</h3>
+<p class="descripcion">Guardá esta app en tu celular como si fuera una aplicación real</p>
+
+<button id="installBtn" class="btn-install">
+Instalar aplicación
+</button>
+</div>
+
+<!-- RESUMEN -->
+<div class="card">
+<h3>📊 Estadísticas</h3>
+<p class="descripcion">Accedé al resumen de ventas y rendimiento del negocio</p>
+
+<a href="/resumen">
+<button class="btn-qr">Ver estadísticas</button>
+</a>
+</div>
+
+<!-- NEGOCIO -->
+<div class="card">
+<h3>💡 Estado del negocio</h3>
+<p class="descripcion">Visualizá el dinero generado hasta el momento</p>
+
 <p>Total vendido: $ {{total_hoy}}</p>
 </div>
 
-<!-- 🚨 ALERTAS -->
+<!-- ALERTAS -->
 <div class="card">
 <h3>🚨 Stock bajo</h3>
+<p class="descripcion">Productos que están por agotarse</p>
 
 {% for p in alertas %}
 <p style="color:red;">⚠ {{p[1]}} ({{p[3]}} unidades)</p>
 {% endfor %}
 
 {% if alertas|length == 0 %}
-<p>Todo OK 👍</p>
+<p>Todo el stock está correcto 👍</p>
 {% endif %}
 </div>
 
 <!-- DASHBOARD -->
 <div class="card">
 <h3>📊 Dashboard</h3>
+<p class="descripcion">Resumen rápido de ventas del día</p>
+
 <p>💰 $ {{total_hoy}}</p>
 <p>🧾 {{cantidad_hoy}} ventas</p>
 </div>
 
 <!-- SCANNER -->
 <div class="card">
-<h3>📷 Escáner</h3>
+<h3>📷 Escanear producto</h3>
+<p class="descripcion">Escaneá un código QR para vender automáticamente</p>
+
 <div id="reader"></div>
 </div>
 
-<!-- PRODUCTOS -->
+<!-- AGREGAR -->
 <div class="card">
 <h3>➕ Agregar producto</h3>
+<p class="descripcion">Cargá nuevos productos al inventario</p>
 
 <form action="/agregar" method="POST" onsubmit="alert('Producto agregado correctamente ✅')">
-<input name="codigo" placeholder="Código"><br>
-<input name="nombre" placeholder="Nombre"><br>
+<input name="codigo" placeholder="Código del producto"><br>
+<input name="nombre" placeholder="Nombre del producto"><br>
 <input name="categoria" placeholder="Categoría"><br>
-<input name="cantidad" type="number" placeholder="Cantidad"><br>
-<input name="precio" type="number" placeholder="Precio"><br>
-<button class="btn-add">Agregar</button>
+<input name="cantidad" type="number" placeholder="Cantidad inicial"><br>
+<input name="precio" type="number" placeholder="Precio de venta"><br>
+
+<button class="btn-add">Guardar producto</button>
 </form>
 </div>
 
 <!-- QR -->
 <div class="card">
 <h3>🏷 Generar QR</h3>
+<p class="descripcion">Creá etiquetas QR para imprimir y pegar en productos</p>
 
 <input id="qr_codigo" placeholder="Código"><br>
 <input id="qr_nombre" placeholder="Nombre"><br>
 <input id="qr_precio" placeholder="Precio"><br>
 
-<button class="btn-qr" onclick="generarQRManual()">Generar QR</button>
+<button class="btn-qr" onclick="generarQRManual()">Generar código QR</button>
 </div>
 
 <!-- INVENTARIO -->
 <div class="card">
 <h3>📋 Inventario</h3>
+<p class="descripcion">Listado completo de productos disponibles</p>
 
 {% for p in productos %}
 <div class="item">
@@ -166,22 +179,26 @@ background:#334155;
 <b>{{p[1]}}</b>
 
 <div style="margin-top:5px;">
-<span style="color:#22c55e;">Stock: {{p[3]}}</span>
+<span style="color:#22c55e;">Stock disponible: {{p[3]}}</span>
 </div>
 
 <div style="font-size:18px;font-weight:bold;">
-$ {{p[4]}}
+Precio: $ {{p[4]}}
 </div>
 
+<p class="descripcion">Venta rápida del producto</p>
+
 <a href="/carrito/{{p[0]}}">
-<button class="btn-sell" onclick="alert('Venta agregada 💰')">
-⚡ Venta rápida
+<button class="btn-sell" onclick="alert('Producto agregado al carrito 💰')">
+⚡ Vender ahora
 </button>
 </a>
 
+<p class="descripcion">Generar etiqueta QR de este producto</p>
+
 <button class="btn-qr"
 onclick="generarQR('{{p[0]}}','{{p[1]}}',{{p[4]}})">
-QR
+Generar QR
 </button>
 
 </div>
@@ -191,14 +208,19 @@ QR
 <!-- CARRITO -->
 <div class="card">
 <h3>🛒 Carrito</h3>
+<p class="descripcion">Productos listos para cobrar</p>
 
 {% for item in carrito %}
 <p>{{item.nombre}} - ${{item.precio}}</p>
 {% endfor %}
 
 <a href="/finalizar">
-<button onclick="notificar()" class="btn-add">💰 Finalizar venta</button>
+<button onclick="notificar()" class="btn-add">
+💰 Finalizar venta
+</button>
 </a>
+
+<p class="descripcion">Genera ticket automáticamente al finalizar</p>
 </div>
 
 <!-- MODAL QR -->
@@ -207,15 +229,16 @@ QR
 <h3 id="nombre"></h3>
 <div id="qrcode"></div>
 <p id="precio"></p>
-<button onclick="window.print()">Imprimir</button>
+
+<button onclick="window.print()">Imprimir etiqueta</button>
 <button onclick="cerrar()">Cerrar</button>
 </div>
 </div>
 
 <script>
-// NOTIFICACIÓN FINAL
+// NOTIFICACIÓN
 function notificar(){
- alert("Venta realizada 💰");
+ alert("Venta realizada con éxito 💰");
 }
 
 // INSTALAR APP
@@ -257,7 +280,7 @@ let codigo = code.includes("|") ? code.split("|")[0] : code;
 location="/scan/"+codigo;
 });
 
-// REFRESH
+// AUTO REFRESH
 setInterval(()=>{ location.reload(); },5000);
 </script>
 

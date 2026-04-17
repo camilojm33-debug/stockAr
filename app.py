@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, session
 import sqlite3
 from datetime import datetime
+import json
 
 app = Flask(__name__)
 app.secret_key = "stockar_secret"
@@ -33,7 +34,7 @@ def init_db():
         fecha TEXT
     )""")
 
-    # 🔄 sync
+    # 🔄 tabla sync
     c.execute("""CREATE TABLE IF NOT EXISTS sync (
         id INTEGER PRIMARY KEY,
         tipo TEXT,
@@ -100,7 +101,7 @@ def index():
 
     carrito = session.get("carrito", [])
 
-    # 🚨 ALERTAS STOCK
+    # 🚨 ALERTAS STOCK BAJO
     alertas = [p for p in productos if p[3] <= 3]
 
     return render_template("index.html",
@@ -195,6 +196,7 @@ def carrito_add(codigo):
 def scan(codigo):
     return carrito_add(codigo)
 
+# FINALIZAR VENTA
 @app.route('/finalizar')
 def finalizar():
     uid = session['user_id']
@@ -215,12 +217,20 @@ def finalizar():
         c.execute("UPDATE productos SET cantidad=cantidad-1 WHERE codigo=? AND usuario_id=?",
                   (item["codigo"],uid))
 
-        # 🔄 sync
+        # 🔄 SYNC
         c.execute("INSERT INTO sync (tipo,dato,fecha) VALUES (?,?,?)",
                   ("venta", item["nombre"], datetime.now().strftime("%Y-%m-%d %H:%M")))
 
     conn.commit()
     conn.close()
+
+    # ☁️ BACKUP AUTOMÁTICO
+    with open("backup.json", "a") as f:
+        f.write(json.dumps({
+            "usuario": uid,
+            "total": total,
+            "fecha": fecha
+        }) + "\n")
 
     session["carrito"] = []
 

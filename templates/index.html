@@ -4,13 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- PWA -->
 <link rel="manifest" href="/static/manifest.json">
 
-<!-- LIBRERÍAS -->
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body {
@@ -27,25 +24,6 @@ padding:15px;
 margin:10px;
 border-radius:15px;
 box-shadow:0 10px 30px rgba(0,0,0,0.6);
-transition:0.3s;
-}
-
-.card:hover{
-transform:scale(1.02);
-}
-
-.descripcion{
-font-size:12px;
-color:#94a3b8;
-margin-bottom:10px;
-}
-
-input {
-padding:10px;
-margin:5px;
-border-radius:8px;
-border:none;
-width:90%;
 }
 
 button {
@@ -68,64 +46,6 @@ background:#1e293b;
 padding:10px;
 margin-top:10px;
 border-radius:10px;
-transition:0.3s;
-}
-
-.item:hover{
-background:#334155;
-}
-
-/* A4 */
-#a4Container {
-display:none;
-background:white;
-color:black;
-padding:20px;
-}
-
-.grid {
-display:grid;
-grid-template-columns: repeat(2,1fr);
-gap:10px;
-}
-
-.label {
-border:1px dashed black;
-padding:10px;
-text-align:center;
-}
-
-/* MODAL */
-#qrModal {
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.9);
-display:none;
-justify-content:center;
-align-items:center;
-}
-
-.modal-content {
-background:white;
-color:black;
-padding:20px;
-border-radius:10px;
-}
-
-/* GRÁFICO */
-canvas{
-background:white;
-border-radius:10px;
-padding:10px;
-}
-
-@media(min-width:768px){
-.grid{
-grid-template-columns: repeat(4,1fr);
-}
 }
 </style>
 </head>
@@ -134,29 +54,14 @@ grid-template-columns: repeat(4,1fr);
 
 <h2>📦 stockAr</h2>
 
+<!-- 🔥 BOTÓN RESUMEN -->
+<a href="/resumen">
+<button class="btn-qr">📊 Ver resumen</button>
+</a>
+
 <a href="/historial">
 <button class="btn-qr">📊 Historial</button>
 </a>
-
-<!-- DASHBOARD -->
-<div class="card">
-<h3>📊 Dashboard</h3>
-<p class="descripcion">Resumen del día</p>
-<p>💰 $ {{total_hoy}}</p>
-<p>🧾 {{cantidad_hoy}} ventas</p>
-</div>
-
-<!-- 📊 GRÁFICO -->
-<div class="card">
-<h3>📊 Ventas</h3>
-<canvas id="graficoVentas"></canvas>
-</div>
-
-<!-- SCANNER -->
-<div class="card">
-<h3>📷 Escanear QR</h3>
-<div id="reader"></div>
-</div>
 
 <!-- PRODUCTO -->
 <div class="card">
@@ -168,36 +73,8 @@ grid-template-columns: repeat(4,1fr);
 <input name="categoria" placeholder="Categoría"><br>
 <input name="cantidad" type="number" placeholder="Cantidad"><br>
 <input name="precio" type="number" placeholder="Precio"><br>
-<button class="btn-add">➕ Agregar</button>
+<button class="btn-add">Agregar</button>
 </form>
-</div>
-
-<!-- QR MANUAL -->
-<div class="card">
-<h3>🏷 Generar QR</h3>
-
-<input id="qr_codigo"><br>
-<input id="qr_nombre"><br>
-<input id="qr_precio"><br>
-
-<button class="btn-qr" onclick="generarQRManual()">📱 QR</button>
-</div>
-
-<!-- QR A4 -->
-<div class="card">
-<h3>🖨 QR A4</h3>
-
-<input id="a4_codigo"><br>
-<input id="a4_nombre"><br>
-<input id="a4_precio"><br>
-<input id="a4_cantidad"><br>
-
-<button class="btn-qr" onclick="generarA4()">📄 Generar</button>
-<button onclick="window.print()">🖨 Imprimir</button>
-</div>
-
-<div id="a4Container">
-<div class="grid" id="a4Grid"></div>
 </div>
 
 <!-- INVENTARIO -->
@@ -206,24 +83,13 @@ grid-template-columns: repeat(4,1fr);
 
 {% for p in productos %}
 <div class="item">
-
 <b>{{p[1]}}</b><br>
 Stock: {{p[3]}}<br>
 $ {{p[4]}}<br>
 
-<a href="/sumar/{{p[0]}}">
-<button class="btn-sum">➕</button>
-</a>
-
 <a href="/carrito/{{p[0]}}">
 <button class="btn-sell">🛒</button>
 </a>
-
-<button class="btn-qr"
-onclick="generarQR('{{p[0]}}','{{p[1]}}',{{p[4]}})">
-🏷
-</button>
-
 </div>
 {% endfor %}
 </div>
@@ -241,20 +107,8 @@ onclick="generarQR('{{p[0]}}','{{p[1]}}',{{p[4]}})">
 </a>
 </div>
 
-<!-- MODAL QR -->
-<div id="qrModal">
-<div class="modal-content">
-<h3 id="nombre"></h3>
-<div id="qrcode"></div>
-<p id="precio"></p>
-
-<button onclick="window.print()">🖨</button>
-<button onclick="cerrar()">❌</button>
-</div>
-</div>
-
 <script>
-// 🔔 NOTIFICACIONES
+// NOTIFICACIONES
 if ("Notification" in window) {
  Notification.requestPermission();
 }
@@ -264,69 +118,6 @@ function notificar(){
    new Notification("Venta realizada 💰");
  }
 }
-
-// 📊 GRÁFICO
-let ventas = {{ cantidad_hoy }};
-let total = {{ total_hoy }};
-
-new Chart(document.getElementById("graficoVentas"), {
-    type: "bar",
-    data: {
-        labels: ["Ventas", "Total"],
-        datasets: [{
-            label: "Resumen",
-            data: [ventas, total],
-        }]
-    }
-});
-
-// QR
-function generarQR(c,n,p){
-let data=c+"|"+n+"|"+p;
-qrModal.style.display="flex";
-nombre.innerText=n;
-precio.innerText="$"+p;
-qrcode.innerHTML="";
-new QRCode(qrcode,data);
-}
-
-function generarQRManual(){
-generarQR(qr_codigo.value,qr_nombre.value,qr_precio.value);
-}
-
-function cerrar(){
-qrModal.style.display="none";
-}
-
-// A4
-function generarA4(){
-let c=a4_codigo.value;
-let n=a4_nombre.value;
-let p=a4_precio.value;
-let cantidad=parseInt(a4_cantidad.value);
-
-let grid=a4Grid;
-grid.innerHTML="";
-
-let data=c+"|"+n+"|"+p;
-
-for(let i=0;i<cantidad;i++){
-let div=document.createElement("div");
-div.className="label";
-div.innerHTML=`<div id="qr${i}"></div><p>${n}</p><p>$${p}</p>`;
-grid.appendChild(div);
-new QRCode(div.querySelector(`#qr${i}`),data);
-}
-
-a4Container.style.display="block";
-}
-
-// SCANNER
-let scanner=new Html5QrcodeScanner("reader",{fps:10,qrbox:250});
-scanner.render(code=>{
-let codigo = code.includes("|") ? code.split("|")[0] : code;
-location="/scan/"+codigo;
-});
 
 // SERVICE WORKER
 if ('serviceWorker' in navigator) {

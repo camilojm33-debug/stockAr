@@ -84,22 +84,54 @@ def index():
     c.execute("SELECT codigo,nombre,categoria,cantidad,precio FROM productos WHERE usuario_id=?", (uid,))
     productos = c.fetchall()
 
-    c.execute("SELECT precio FROM ventas WHERE usuario_id=?", (uid,))
+    conn.close()
+
+    return render_template("index.html",
+        productos=productos,
+        carrito=session.get("carrito", [])
+    )
+
+# 🔥 RESUMEN (NUEVO)
+@app.route('/resumen')
+def resumen():
+    uid = session['user_id']
+
+    conn = sqlite3.connect("database.db")
+    c = conn.cursor()
+
+    c.execute("SELECT nombre,precio,fecha FROM ventas WHERE usuario_id=?", (uid,))
     ventas = c.fetchall()
 
     conn.close()
 
-    total = sum([v[0] for v in ventas])
+    total = sum([v[1] for v in ventas])
     cantidad = len(ventas)
 
-    return render_template("index.html",
-        productos=productos,
-        carrito=session.get("carrito", []),
-        total_hoy=total,
-        cantidad_hoy=cantidad
+    # ventas por día
+    ventas_por_dia = {}
+    for v in ventas:
+        dia = v[2].split(" ")[0]
+        ventas_por_dia[dia] = ventas_por_dia.get(dia, 0) + v[1]
+
+    dias = list(ventas_por_dia.keys())
+    montos = list(ventas_por_dia.values())
+
+    # top productos
+    productos_count = {}
+    for v in ventas:
+        productos_count[v[0]] = productos_count.get(v[0], 0) + 1
+
+    top_productos = sorted(productos_count.items(), key=lambda x: x[1], reverse=True)[:5]
+
+    return render_template("resumen.html",
+        total=total,
+        cantidad=cantidad,
+        dias=dias,
+        montos=montos,
+        top_productos=top_productos
     )
 
-# PRODUCTO
+# PRODUCTOS
 @app.route('/agregar', methods=['POST'])
 def agregar():
     uid = session['user_id']
@@ -121,20 +153,6 @@ def agregar():
     conn.close()
     return redirect('/')
 
-@app.route('/sumar/<codigo>')
-def sumar(codigo):
-    uid = session['user_id']
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-    c.execute("""UPDATE productos 
-                 SET cantidad=cantidad+1, updated_at=? 
-                 WHERE codigo=? AND usuario_id=?""",
-                 (datetime.now().strftime("%Y-%m-%d %H:%M"), codigo, uid))
-    conn.commit()
-    conn.close()
-    return redirect('/')
-
-# CARRITO
 @app.route('/carrito/<codigo>')
 def carrito_add(codigo):
     uid = session['user_id']
@@ -152,11 +170,6 @@ def carrito_add(codigo):
 
     return redirect('/')
 
-@app.route('/scan/<codigo>')
-def scan(codigo):
-    return carrito_add(codigo)
-
-# FINALIZAR
 @app.route('/finalizar')
 def finalizar():
     uid = session['user_id']
@@ -174,10 +187,8 @@ def finalizar():
         c.execute("INSERT INTO ventas (usuario_id,nombre,precio,fecha) VALUES (?,?,?,?)",
                   (uid,item["nombre"],item["precio"],fecha))
 
-        c.execute("""UPDATE productos 
-                     SET cantidad=cantidad-1, updated_at=? 
-                     WHERE codigo=? AND usuario_id=?""",
-                     (datetime.now().strftime("%Y-%m-%d %H:%M"), item["codigo"], uid))
+        c.execute("UPDATE productos SET cantidad=cantidad-1 WHERE codigo=? AND usuario_id=?",
+                  (item["codigo"],uid))
 
     conn.commit()
     conn.close()
@@ -185,18 +196,3 @@ def finalizar():
     session["carrito"] = []
 
     return render_template("ticket.html", carrito=carrito, total=total, fecha=fecha)
-
-# HISTORIAL
-@app.route('/historial')
-def historial():
-    uid = session['user_id']
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-    c.execute("SELECT nombre,precio,fecha FROM ventas WHERE usuario_id=?", (uid,))
-    ventas = c.fetchall()
-    conn.close()
-
-    return render_template("historial.html", ventas=ventas)
-
-if __name__ == '__main__':
-    app.run()

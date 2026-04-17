@@ -1,34 +1,18 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<style>
-body{background:#020617;color:white;text-align:center;font-family:Arial;}
-.card{background:#0f172a;margin:10px;padding:15px;border-radius:10px;}
-</style>
-</head>
-
-<body>
+<html>
+<body style="background:#020617;color:white;text-align:center;">
 
 <h2>📊 Resumen</h2>
 
-<div class="card">
-<p>💰 Total: $ {{total}}</p>
-<p>🧾 Ventas: {{cantidad}}</p>
-</div>
+<p>Total: $ {{total}}</p>
+<p>Ventas: {{cantidad}}</p>
 
-<div class="card">
-<h3>🏆 Ranking mensual</h3>
-
+<h3>🏆 Ranking</h3>
 {% for r in ranking_mensual %}
-<p>{{r[0]}} - {{r[1]}} ventas</p>
+<p>{{r[0]}} - {{r[1]}}</p>
 {% endfor %}
 
-</div>
-
-<a href="/">⬅ Volver</a>
+<a href="/">Volver</a>
 
 </body>
 </html>

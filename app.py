@@ -34,14 +34,6 @@ def init_db():
         fecha TEXT
     )""")
 
-    # 🔄 tabla sync
-    c.execute("""CREATE TABLE IF NOT EXISTS sync (
-        id INTEGER PRIMARY KEY,
-        tipo TEXT,
-        dato TEXT,
-        fecha TEXT
-    )""")
-
     conn.commit()
     conn.close()
 
@@ -101,7 +93,6 @@ def index():
 
     carrito = session.get("carrito", [])
 
-    # 🚨 ALERTAS STOCK BAJO
     alertas = [p for p in productos if p[3] <= 3]
 
     return render_template("index.html",
@@ -112,7 +103,7 @@ def index():
         alertas=alertas
     )
 
-# 🏆 RESUMEN
+# RESUMEN
 @app.route('/resumen')
 def resumen():
     uid = session['user_id']
@@ -128,12 +119,8 @@ def resumen():
     total = sum([v[1] for v in ventas])
     cantidad = len(ventas)
 
-    mes_actual = datetime.now().strftime("%m/%Y")
-
-    ventas_mes = [v for v in ventas if mes_actual in v[2]]
-
     ranking = {}
-    for v in ventas_mes:
+    for v in ventas:
         ranking[v[0]] = ranking.get(v[0], 0) + 1
 
     ranking_mensual = sorted(ranking.items(), key=lambda x: x[1], reverse=True)
@@ -144,7 +131,7 @@ def resumen():
         ranking_mensual=ranking_mensual
     )
 
-# PRODUCTOS
+# AGREGAR
 @app.route('/agregar', methods=['POST'])
 def agregar():
     uid = session['user_id']
@@ -165,16 +152,7 @@ def agregar():
     conn.close()
     return redirect('/')
 
-@app.route('/sumar/<codigo>')
-def sumar(codigo):
-    uid = session['user_id']
-    conn = sqlite3.connect("database.db")
-    c = conn.cursor()
-    c.execute("UPDATE productos SET cantidad=cantidad+1 WHERE codigo=? AND usuario_id=?", (codigo,uid))
-    conn.commit()
-    conn.close()
-    return redirect('/')
-
+# CARRITO
 @app.route('/carrito/<codigo>')
 def carrito_add(codigo):
     uid = session['user_id']
@@ -192,11 +170,7 @@ def carrito_add(codigo):
 
     return redirect('/')
 
-@app.route('/scan/<codigo>')
-def scan(codigo):
-    return carrito_add(codigo)
-
-# FINALIZAR VENTA
+# FINALIZAR
 @app.route('/finalizar')
 def finalizar():
     uid = session['user_id']
@@ -217,14 +191,10 @@ def finalizar():
         c.execute("UPDATE productos SET cantidad=cantidad-1 WHERE codigo=? AND usuario_id=?",
                   (item["codigo"],uid))
 
-        # 🔄 SYNC
-        c.execute("INSERT INTO sync (tipo,dato,fecha) VALUES (?,?,?)",
-                  ("venta", item["nombre"], datetime.now().strftime("%Y-%m-%d %H:%M")))
-
     conn.commit()
     conn.close()
 
-    # ☁️ BACKUP AUTOMÁTICO
+    # BACKUP
     with open("backup.json", "a") as f:
         f.write(json.dumps({
             "usuario": uid,
@@ -235,6 +205,3 @@ def finalizar():
     session["carrito"] = []
 
     return render_template("ticket.html", carrito=carrito, total=total, fecha=fecha)
-
-if __name__ == '__main__':
-    app.run()

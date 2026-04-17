@@ -2,84 +2,42 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body{
-background:linear-gradient(135deg,#020617,#0f172a);
-color:white;
-font-family:Arial;
-text-align:center;
-margin:0;
-}
-
-.card{
-background:#0f172a;
-margin:10px;
-padding:15px;
-border-radius:15px;
-box-shadow:0 10px 30px rgba(0,0,0,0.6);
-}
-
-canvas{
-background:white;
-border-radius:10px;
-padding:10px;
-}
-
-button{
-padding:12px;
-margin:10px;
-border:none;
-border-radius:10px;
-background:#a855f7;
-color:white;
-font-weight:bold;
-}
+body{background:#020617;color:white;text-align:center;font-family:Arial;}
+.card{background:#0f172a;margin:10px;padding:15px;border-radius:10px;}
 </style>
 </head>
 
 <body>
 
-<h2>📊 Resumen de ventas</h2>
+<h2>📊 Resumen</h2>
 
 <div class="card">
-<p>💰 Total: $ {{total}}</p>
-<p>🧾 Ventas: {{cantidad}}</p>
-<p>📊 Promedio: $ {{ (total/cantidad) if cantidad>0 else 0 }}</p>
+<p>Total: $ {{total}}</p>
+<p>Ventas: {{cantidad}}</p>
 </div>
 
 <div class="card">
-<h3>📈 Ventas por día</h3>
 <canvas id="grafico"></canvas>
 </div>
 
 <div class="card">
-<h3>🏆 Más vendidos</h3>
-
 {% for p in top_productos %}
-<p>{{p[0]}} - {{p[1]}} ventas</p>
+<p>{{p[0]}} - {{p[1]}}</p>
 {% endfor %}
-
 </div>
 
-<a href="/">
-<button>⬅ Volver</button>
-</a>
+<a href="/">⬅ Volver</a>
 
 <script>
 new Chart(document.getElementById("grafico"), {
-    type: "line",
-    data: {
-        labels: {{ dias | tojson }},
-        datasets: [{
-            label: "Ventas",
-            data: {{ montos | tojson }},
-            borderWidth: 3
-        }]
-    }
+ type:"line",
+ data:{
+  labels: {{ dias | tojson }},
+  datasets:[{data: {{ montos | tojson }}}]
+ }
 });
 </script>
 

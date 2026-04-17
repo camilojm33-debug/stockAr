@@ -1,15 +1,23 @@
 <!DOCTYPE html>
 <html>
 <body style="text-align:center;">
+
 <h2>🧾 Ticket</h2>
 
 {% for item in carrito %}
 <p>{{item.nombre}} - ${{item.precio}}</p>
 {% endfor %}
 
-<p>Total: ${{total}}</p>
+<p><b>Total: ${{total}}</b></p>
 <p>{{fecha}}</p>
 
-<button onclick="window.print()">Imprimir</button>
+<button onclick="window.print()">🖨 Imprimir</button>
+
+<br><br>
+
+<a href="/ticket_pdf">
+<button>📄 Descargar PDF</button>
+</a>
+
 </body>
 </html>

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#020617">
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -29,14 +30,7 @@ box-shadow:0 10px 30px rgba(0,0,0,0.6);
 .descripcion{
 font-size:12px;
 color:#94a3b8;
-}
-
-input {
-padding:10px;
-margin:5px;
-border-radius:8px;
-border:none;
-width:90%;
+margin-bottom:10px;
 }
 
 button {
@@ -45,57 +39,17 @@ margin:5px;
 border:none;
 border-radius:10px;
 font-weight:bold;
-cursor:pointer;
 width:90%;
 }
 
 .btn-add{background:#22c55e;}
-.btn-sum{background:#3b82f6;width:auto;}
-.btn-sell{background:#ef4444;width:auto;}
+.btn-sell{background:#ef4444;}
 .btn-qr{background:#a855f7;}
 
 .item {
 background:#1e293b;
 padding:10px;
 margin-top:10px;
-border-radius:10px;
-}
-
-#a4Container {
-display:none;
-background:white;
-color:black;
-padding:20px;
-}
-
-.grid {
-display:grid;
-grid-template-columns: repeat(2,1fr);
-gap:10px;
-}
-
-.label {
-border:1px dashed black;
-padding:10px;
-text-align:center;
-}
-
-#qrModal {
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.9);
-display:none;
-justify-content:center;
-align-items:center;
-}
-
-.modal-content {
-background:white;
-color:black;
-padding:20px;
 border-radius:10px;
 }
 </style>
@@ -105,44 +59,34 @@ border-radius:10px;
 
 <h2>📦 stockAr</h2>
 
+<!-- 📲 INSTALAR APP -->
+<button id="installBtn" class="btn-add" style="display:none;">
+📲 Instalar App
+</button>
+
 <!-- 📊 RESUMEN -->
 <a href="/resumen">
 <button class="btn-qr">📊 Ver resumen</button>
 </a>
 
-<a href="/historial">
-<button class="btn-qr">📊 Historial</button>
-</a>
-
 <!-- 🚨 ALERTAS -->
 <div class="card">
 <h3>🚨 Stock bajo</h3>
+<p class="descripcion">Productos con pocas unidades disponibles</p>
 
 {% for p in alertas %}
 <p style="color:red;">⚠ {{p[1]}} ({{p[3]}} unidades)</p>
 {% endfor %}
 
 {% if alertas|length == 0 %}
-<p class="descripcion">Todo el stock está OK</p>
+<p>Todo OK 👍</p>
 {% endif %}
 </div>
 
-<!-- DASHBOARD -->
+<!-- PRODUCTOS -->
 <div class="card">
-<h3>📊 Dashboard</h3>
-<p>💰 $ {{total_hoy}}</p>
-<p>🧾 {{cantidad_hoy}} ventas</p>
-</div>
-
-<!-- SCANNER -->
-<div class="card">
-<h3>📷 Escanear QR</h3>
-<div id="reader"></div>
-</div>
-
-<!-- PRODUCTO -->
-<div class="card">
-<h3>➕ Producto</h3>
+<h3>➕ Agregar producto</h3>
+<p class="descripcion">Cargá nuevos productos a tu inventario</p>
 
 <form action="/agregar" method="POST">
 <input name="codigo" placeholder="Código"><br>
@@ -150,63 +94,24 @@ border-radius:10px;
 <input name="categoria" placeholder="Categoría"><br>
 <input name="cantidad" type="number" placeholder="Cantidad"><br>
 <input name="precio" type="number" placeholder="Precio"><br>
-<button class="btn-add">➕ Agregar</button>
+<button class="btn-add">Agregar</button>
 </form>
-</div>
-
-<!-- QR MANUAL -->
-<div class="card">
-<h3>🏷 Generar QR</h3>
-
-<input id="qr_codigo" placeholder="Código"><br>
-<input id="qr_nombre" placeholder="Nombre"><br>
-<input id="qr_precio" placeholder="Precio"><br>
-
-<button class="btn-qr" onclick="generarQRManual()">📱 Generar QR</button>
-</div>
-
-<!-- QR A4 -->
-<div class="card">
-<h3>🖨 QR A4</h3>
-
-<input id="a4_codigo" placeholder="Código"><br>
-<input id="a4_nombre" placeholder="Nombre"><br>
-<input id="a4_precio" placeholder="Precio"><br>
-<input id="a4_cantidad" placeholder="Cantidad"><br>
-
-<button class="btn-qr" onclick="generarA4()">📄 Generar</button>
-<button onclick="window.print()">🖨 Imprimir</button>
-</div>
-
-<div id="a4Container">
-<div class="grid" id="a4Grid"></div>
 </div>
 
 <!-- INVENTARIO -->
 <div class="card">
 <h3>📋 Inventario</h3>
+<p class="descripcion">Lista de todos tus productos</p>
 
 {% for p in productos %}
 <div class="item">
-
 <b>{{p[1]}}</b><br>
-📦 {{p[2]}}<br>
 Stock: {{p[3]}}<br>
 $ {{p[4]}}<br>
 
-<a href="/sumar/{{p[0]}}">
-<button class="btn-sum">➕</button>
-</a>
-
 <a href="/carrito/{{p[0]}}">
-<button class="btn-sell">🛒</button>
+<button class="btn-sell">🛒 Vender</button>
 </a>
-
-<button class="btn-qr"
-onclick="generarQR('{{p[0]}}','{{p[1]}}',{{p[4]}})">
-🏷
-</button>
-
 </div>
 {% endfor %}
 </div>
@@ -214,26 +119,15 @@ onclick="generarQR('{{p[0]}}','{{p[1]}}',{{p[4]}})">
 <!-- CARRITO -->
 <div class="card">
 <h3>🛒 Carrito</h3>
+<p class="descripcion">Productos listos para cobrar</p>
 
 {% for item in carrito %}
 <p>{{item.nombre}} - ${{item.precio}}</p>
 {% endfor %}
 
 <a href="/finalizar">
-<button onclick="notificar()" class="btn-add">💰 Finalizar</button>
+<button onclick="notificar()" class="btn-add">💰 Finalizar venta</button>
 </a>
-</div>
-
-<!-- MODAL QR -->
-<div id="qrModal">
-<div class="modal-content">
-<h3 id="nombre"></h3>
-<div id="qrcode"></div>
-<p id="precio"></p>
-
-<button onclick="window.print()">🖨</button>
-<button onclick="cerrar()">❌</button>
-</div>
 </div>
 
 <script>
@@ -248,65 +142,28 @@ function notificar(){
  }
 }
 
-// QR
-function generarQR(c,n,p){
-let data=c+"|"+n+"|"+p;
-qrModal.style.display="flex";
-nombre.innerText=n;
-precio.innerText="$"+p;
-qrcode.innerHTML="";
-new QRCode(qrcode,data);
-}
-
-function generarQRManual(){
-generarQR(qr_codigo.value,qr_nombre.value,qr_precio.value);
-}
-
-function cerrar(){
-qrModal.style.display="none";
-}
-
-// A4
-function generarA4(){
-let c=a4_codigo.value;
-let n=a4_nombre.value;
-let p=a4_precio.value;
-let cantidad=parseInt(a4_cantidad.value);
-
-let grid=a4Grid;
-grid.innerHTML="";
-
-let data=c+"|"+n+"|"+p;
-
-for(let i=0;i<cantidad;i++){
-let div=document.createElement("div");
-div.className="label";
-div.innerHTML=`<div id="qr${i}"></div><p>${n}</p><p>$${p}</p>`;
-grid.appendChild(div);
-new QRCode(div.querySelector(`#qr${i}`),data);
-}
-
-a4Container.style.display="block";
-}
-
-// SCANNER
-let scanner=new Html5QrcodeScanner("reader",{fps:10,qrbox:250});
-scanner.render(code=>{
-let codigo = code.includes("|") ? code.split("|")[0] : code;
-location="/scan/"+codigo;
+// 📲 INSTALAR APP
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+ e.preventDefault();
+ deferredPrompt = e;
+ document.getElementById("installBtn").style.display = "block";
 });
 
-// SERVICE WORKER
-if ('serviceWorker' in navigator) {
- navigator.serviceWorker.register('/static/service-worker.js')
-}
-</script>
+document.getElementById("installBtn").addEventListener("click", () => {
+ deferredPrompt.prompt();
+});
 
-</body>
-</html>
-<script>
-// AUTO REFRESH CADA 5 SEGUNDOS (simula tiempo real)
+// 📡 OFFLINE
+window.addEventListener("offline", ()=>{
+ alert("⚠ Sin conexión");
+});
+
+// 🔄 REFRESH (simula tiempo real)
 setInterval(()=>{
  location.reload();
 },5000);
 </script>
+
+</body>
+</html>

@@ -4,7 +4,34 @@
 <div class="card">
 <h3>➕ Agregar producto</h3>
 <p>Creá productos con precio y stock</p>
+<div class="card">
+<h3>📊 Dashboard</h3>
+<p>Total vendido: ${{total}}</p>
+<p>Ventas: {{cantidad_ventas}}</p>
+</div>
 
+<!-- 🔥 GRAFICO -->
+<div class="card">
+<h3>📈 Ventas</h3>
+<canvas id="grafico"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const data = {
+    labels: ["Ventas"],
+    datasets: [{
+        label: "Total",
+        data: [{{total}}],
+    }]
+};
+
+new Chart(document.getElementById('grafico'), {
+    type: 'bar',
+    data: data
+});
+</script>
 <form method="POST" action="/agregar">
 <input name="nombre" placeholder="Nombre">
 <input name="categoria" placeholder="Categoría">

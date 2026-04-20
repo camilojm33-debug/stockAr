@@ -2,7 +2,5 @@
   "name": "stockAr",
   "short_name": "stockAr",
   "start_url": "/",
-  "display": "standalone",
-  "background_color": "#020617",
-  "theme_color": "#020617"
+  "display": "standalone"
 }

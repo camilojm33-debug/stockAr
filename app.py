@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, session, send_file
-import sqlite3, json, time, qrcode, os
+import sqlite3, time, qrcode, os
 from datetime import datetime
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Image, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
@@ -16,11 +16,7 @@ def init_db():
     conn = db()
     c = conn.cursor()
 
-    c.execute("""CREATE TABLE IF NOT EXISTS usuarios(
-        id INTEGER PRIMARY KEY,
-        username TEXT,
-        password TEXT)""")
-
+    c.execute("CREATE TABLE IF NOT EXISTS usuarios(id INTEGER PRIMARY KEY, username TEXT, password TEXT)")
     c.execute("""CREATE TABLE IF NOT EXISTS productos(
         id INTEGER PRIMARY KEY,
         usuario_id INTEGER,
@@ -29,7 +25,6 @@ def init_db():
         categoria TEXT,
         cantidad INTEGER,
         precio REAL)""")
-
     c.execute("""CREATE TABLE IF NOT EXISTS ventas(
         id INTEGER PRIMARY KEY,
         usuario_id INTEGER,
@@ -187,7 +182,10 @@ def historial():
 def scanner():
     return render_template("scanner.html")
 
-# ---------------- QR A4 ----------------
+# ---------------- QR A4 ETIQUETAS ----------------
+from reportlab.platypus import Table, TableStyle
+from reportlab.lib import colors
+
 @app.route('/qr')
 def qr():
     uid = session['user_id']
@@ -197,32 +195,46 @@ def qr():
     c.execute("SELECT codigo,nombre,precio FROM productos WHERE usuario_id=?", (uid,))
     productos = c.fetchall()
 
-    doc = SimpleDocTemplate("qr_etiquetas.pdf")
-    content = []
     styles = getSampleStyleSheet()
+    data = []
+    fila = []
 
     archivos = []
 
-    for p in productos:
-        data = p[0]
-
-        img = qrcode.make(data)
+    for i, p in enumerate(productos):
+        img = qrcode.make(p[0])
         filename = f"{p[0]}.png"
         img.save(filename)
         archivos.append(filename)
 
-        # etiqueta tipo producto
-        content.append(Paragraph(f"<b>{p[1]}</b>", styles["Normal"]))
-        content.append(Paragraph(f"Precio: ${p[2]}", styles["Normal"]))
-        content.append(Image(filename, width=140, height=140))
-        content.append(Spacer(1,20))
+        celda = [
+            Paragraph(f"<b>{p[1]}</b>", styles["Normal"]),
+            Paragraph(f"${p[2]}", styles["Normal"]),
+            Image(filename, width=90, height=90)
+        ]
 
-    doc.build(content)
+        fila.append(celda)
+
+        if len(fila) == 3:
+            data.append(fila)
+            fila = []
+
+    if fila:
+        data.append(fila)
+
+    doc = SimpleDocTemplate("qr_grilla.pdf")
+    tabla = Table(data)
+    tabla.setStyle(TableStyle([
+        ('GRID',(0,0),(-1,-1),1,colors.black),
+        ('ALIGN',(0,0),(-1,-1),'CENTER')
+    ]))
+
+    doc.build([tabla])
 
     for f in archivos:
         os.remove(f)
 
-    return send_file("qr_etiquetas.pdf", as_attachment=True)
+    return send_file("qr_grilla.pdf", as_attachment=True)
 
 # ---------------- TICKET ----------------
 @app.route('/ticket')

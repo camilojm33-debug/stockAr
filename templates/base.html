@@ -3,10 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>stockAr</title>
 
 <link rel="manifest" href="/static/manifest.json">
-
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/static/service-worker.js');
@@ -14,74 +12,24 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <style>
-body{
-    background:#020617;
-    color:white;
-    font-family:Arial;
-    margin:0;
+  .btn{
+    background:linear-gradient(135deg,#22c55e,#16a34a);
 }
 
 .header{
-    background:#0f172a;
-    padding:18px;
-    text-align:center;
-    font-size:24px;
-    font-weight:bold;
+    letter-spacing:1px;
 }
 
 .card{
-    background:#0f172a;
-    margin:12px;
-    padding:18px;
-    border-radius:16px;
+    box-shadow:0 0 10px rgba(0,0,0,0.5);
 }
-
-.btn{
-    background:#22c55e;
-    border:none;
-    padding:16px;
-    border-radius:10px;
-    color:white;
-    width:100%;
-    margin-top:8px;
-    font-size:18px;
-}
-
-.btn2{background:#3b82f6;}
-.btn3{background:#f59e0b;}
-
-input{
-    width:100%;
-    padding:12px;
-    margin-top:8px;
-    border-radius:10px;
-    border:none;
-}
-
-.nav{
-    display:flex;
-    justify-content:space-around;
-    background:#020617;
-    padding:12px;
-    position:fixed;
-    bottom:0;
-    width:100%;
-}
-
-.nav a{
-    color:white;
-    text-decoration:none;
-    font-size:20px;
-}
-.alert{
-    background:#ef4444;
-    padding:12px;
-    border-radius:10px;
-    margin:10px;
-}
+body{background:#020617;color:white;font-family:Arial;margin:0;}
+.header{background:#0f172a;padding:20px;text-align:center;font-size:24px;}
+.card{background:#0f172a;margin:12px;padding:18px;border-radius:15px;}
+.btn{background:#22c55e;padding:15px;border:none;width:100%;color:white;border-radius:10px;}
+.nav{position:fixed;bottom:0;width:100%;display:flex;justify-content:space-around;}
 </style>
 </head>
-
 <body>
 
 <div class="header">📦 stockAr PRO</div>
@@ -89,10 +37,10 @@ input{
 {% block content %}{% endblock %}
 
 <div class="nav">
-    <a href="/">🏠</a>
-    <a href="/scanner">📷</a>
-    <a href="/historial">📊</a>
-    <a href="/qr">🧾</a>
+<a href="/">🏠</a>
+<a href="/scanner">📷</a>
+<a href="/historial">📊</a>
+<a href="/qr">🧾</a>
 </div>
 
 </body>

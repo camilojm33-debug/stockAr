@@ -31,11 +31,12 @@
 <h3>➕ Agregar producto</h3>
 
 <form method="POST" action="/agregar">
-<input name="nombre" placeholder="Nombre"><br>
-<input name="categoria" placeholder="Categoría"><br>
-<input name="cantidad" placeholder="Stock"><br>
-<input name="precio" placeholder="Precio"><br>
-<button class="btn">Guardar</button>
+<input name="nombre" placeholder="Nombre" required>
+<input name="categoria" placeholder="Categoría" required>
+<input name="cantidad" type="number" placeholder="Stock" required>
+<input name="precio" type="number" placeholder="Precio" required>
+
+<button class="btn" type="submit">💾 Guardar producto</button>
 </form>
 </div>
 

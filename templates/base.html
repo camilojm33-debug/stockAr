@@ -4,42 +4,41 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="manifest" href="/static/manifest.json">
+<title>stockAr</title>
 
 <style>
 body{
-    margin:0;
-    font-family:Arial;
     background:#020617;
     color:white;
-    display:flex;
+    font-family:Arial;
+    margin:0;
 }
 
-/* SIDEBAR */
-.sidebar{
-    width:220px;
+/* NAV */
+.nav{
     background:#0f172a;
-    height:100vh;
-    padding:20px;
+    padding:15px;
+    display:flex;
+    justify-content:space-around;
+    border-bottom:1px solid #1e293b;
 }
 
-.sidebar a{
-    display:block;
+.nav a{
     color:white;
-    padding:12px;
     text-decoration:none;
-    margin-bottom:5px;
-    border-radius:8px;
+    font-size:14px;
 }
 
-.sidebar a:hover{
-    background:#1e293b;
-}
-
-/* MAIN */
-.main{
-    flex:1;
+/* CONTENEDOR */
+.container{
     padding:20px;
+}
+
+/* GRID */
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:15px;
 }
 
 /* CARDS */
@@ -47,48 +46,55 @@ body{
     background:#0f172a;
     padding:20px;
     border-radius:12px;
+    box-shadow:0 0 10px rgba(0,0,0,0.3);
     margin-bottom:15px;
 }
 
-/* GRID */
-.grid{
-    display:grid;
-    grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
-    gap:15px;
-}
-
 /* COLORES */
-.blue{background:#1d4ed8;}
-.green{background:#16a34a;}
-.purple{background:#9333ea;}
-.orange{background:#ea580c;}
+.blue{background:#1e3a8a;}
+.green{background:#065f46;}
+.purple{background:#4c1d95;}
+.orange{background:#9a3412;}
 
+/* BOTONES */
 .btn{
     background:#22c55e;
     border:none;
-    padding:12px;
+    padding:15px;
+    border-radius:10px;
     color:white;
-    border-radius:8px;
     width:100%;
+    font-size:16px;
     margin-top:10px;
+    cursor:pointer;
+}
+
+.btn:hover{
+    background:#16a34a;
+}
+
+/* INPUTS */
+input{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    border-radius:8px;
+    border:none;
+    outline:none;
 }
 </style>
 </head>
 
 <body>
 
-<div class="sidebar">
-<h2>📦 stockAr</h2>
-
-<a href="/">🏠 Inicio</a>
-<a href="/productos">📦 Productos</a>
-<a href="/scanner">📷 Escanear</a>
-<a href="/historial">📊 Historial</a>
-<a href="/qr_config">🧾 Etiquetas</a>
-<a href="/qr_manual">➕ QR Manual</a>
+<div class="nav">
+    <a href="/">🏠 Inicio</a>
+    <a href="/productos">📦 Productos</a>
+    <a href="/qr_config">🏷 QR</a>
+    <a href="/historial">📊 Historial</a>
 </div>
 
-<div class="main">
+<div class="container">
 {% block content %}{% endblock %}
 </div>
 

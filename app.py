@@ -76,10 +76,16 @@ def index():
     total = sum([v[0] for v in ventas])
     carrito = session.get("carrito", [])
 
+    # 🔥 ARREGLOS
+    cantidad_ventas = len(ventas)
+    alertas = [p for p in productos if p[3] <= 5]
+
     return render_template("index.html",
         productos=productos,
         carrito=carrito,
-        total=total
+        total=total,
+        cantidad_ventas=cantidad_ventas,
+        alertas=alertas
     )
 
 # ---------------- AGREGAR ----------------
@@ -151,6 +157,7 @@ def qr_config():
     c.execute("SELECT * FROM productos WHERE usuario_id=?", (uid,))
     productos = c.fetchall()
 
+    conn.close()
     return render_template("qr_config.html", productos=productos)
 
 # ---------------- QR GENERAR ----------------
@@ -243,17 +250,18 @@ def carrito(data):
         producto = c.fetchone()
 
     if producto:
-        carrito = session.get("carrito", [])
-        carrito.append({
+        carrito_session = session.get("carrito", [])
+        carrito_session.append({
             "codigo": partes[0],
             "nombre": producto[0],
             "precio": producto[1]
         })
-        session["carrito"] = carrito
+        session["carrito"] = carrito_session
 
+    conn.close()
     return redirect('/')
 
-# ---------------- VENTA DIRECTA (CAJA RÁPIDA) ----------------
+# ---------------- VENTA DIRECTA ----------------
 @app.route('/vender/<data>')
 def vender(data):
     uid = session['user_id']

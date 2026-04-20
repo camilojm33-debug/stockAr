@@ -146,71 +146,68 @@ def qr_config():
 
     return render_template("qr_config.html", productos=productos)
 
-# ---------------- QR A4 PRO ----------------
+# ---------------- QR GENERAR ----------------
 @app.route('/qr_generar', methods=['POST'])
 def qr_generar():
-    total = int(request.form['total'])
+    try:
+        total = int(request.form.get('total', 0))
 
-    styles = getSampleStyleSheet()
-    data = []
-    fila = []
-    archivos = []
+        if total == 0:
+            return "No hay productos para generar etiquetas"
 
-    for i in range(1, total+1):
-        codigo = request.form[f'codigo_{i}']
-        precio = request.form[f'precio_{i}']
-        nombre = f"Producto {i}"
+        styles = getSampleStyleSheet()
+        data = []
+        fila = []
+        archivos = []
 
-        img = qrcode.make(codigo)
-        filename = f"{codigo}.png"
-        img.save(filename)
-        archivos.append(filename)
+        for i in range(1, total+1):
+            codigo = request.form.get(f'codigo_{i}')
+            precio = request.form.get(f'precio_{i}')
+            nombre = request.form.get(f'nombre_{i}', 'Producto')
 
-        celda = [
-            Paragraph(f"<font size=14><b>${precio}</b></font>", styles["Normal"]),
-            Image(filename, width=3.5*cm, height=3.5*cm),
-            Paragraph(f"<font size=8>{nombre}</font>", styles["Normal"])
-        ]
+            if not codigo:
+                continue
 
-        fila.append(celda)
+            img = qrcode.make(codigo)
+            filename = f"{codigo}.png"
+            img.save(filename)
+            archivos.append(filename)
 
-        if len(fila) == 4:
+            celda = [
+                Paragraph(f"<font size=14><b>${precio}</b></font>", styles["Normal"]),
+                Image(filename, width=3.5*cm, height=3.5*cm),
+                Paragraph(f"<font size=8>{nombre}</font>", styles["Normal"])
+            ]
+
+            fila.append(celda)
+
+            if len(fila) == 4:
+                data.append(fila)
+                fila = []
+
+        if fila:
+            while len(fila) < 4:
+                fila.append("")
             data.append(fila)
-            fila = []
 
-    if fila:
-        while len(fila) < 4:
-            fila.append("")
-        data.append(fila)
+        doc = SimpleDocTemplate("etiquetas.pdf", pagesize=(21*cm, 29.7*cm))
 
-    doc = SimpleDocTemplate(
-        "etiquetas_pro.pdf",
-        pagesize=(21*cm, 29.7*cm),
-        leftMargin=0.3*cm,
-        rightMargin=0.3*cm,
-        topMargin=0.3*cm,
-        bottomMargin=0.3*cm
-    )
+        tabla = Table(data, colWidths=[5*cm]*4)
+        tabla.setStyle(TableStyle([
+            ('ALIGN',(0,0),(-1,-1),'CENTER'),
+        ]))
 
-    tabla = Table(
-        data,
-        colWidths=[5*cm]*4,
-        rowHeights=[5*cm]*len(data)
-    )
+        doc.build([tabla])
 
-    tabla.setStyle(TableStyle([
-        ('ALIGN',(0,0),(-1,-1),'CENTER'),
-        ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
-    ]))
+        for f in archivos:
+            os.remove(f)
 
-    doc.build([tabla])
+        return send_file("etiquetas.pdf", as_attachment=True)
 
-    for f in archivos:
-        os.remove(f)
+    except Exception as e:
+        return f"Error generando PDF: {str(e)}"
 
-    return send_file("etiquetas_pro.pdf", as_attachment=True)
-
-# ---------------- CARRITO INTELIGENTE ----------------
+# ---------------- CARRITO ----------------
 @app.route('/carrito/<data>')
 def carrito(data):
     uid = session['user_id']
@@ -248,6 +245,45 @@ def carrito(data):
         session["carrito"] = carrito
 
     return redirect('/')
+
+# ---------------- VENTA DIRECTA (CAJA RÁPIDA) ----------------
+@app.route('/vender/<data>')
+def vender(data):
+    uid = session['user_id']
+    partes = data.split("|")
+
+    conn = db()
+    c = conn.cursor()
+
+    if len(partes) == 3:
+        codigo, nombre, precio = partes
+        producto = (nombre, float(precio))
+    else:
+        c.execute("SELECT nombre,precio FROM productos WHERE codigo=? AND usuario_id=?", (data,uid))
+        producto = c.fetchone()
+
+    if not producto:
+        return "Producto no encontrado"
+
+    nombre, precio = producto
+    fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
+
+    c.execute("INSERT INTO ventas VALUES (NULL,?,?,?,?)",
+              (uid, nombre, precio, fecha))
+
+    c.execute("UPDATE productos SET cantidad=cantidad-1 WHERE codigo=? AND usuario_id=?",
+              (partes[0], uid))
+
+    conn.commit()
+    conn.close()
+
+    session["ultima"] = {
+        "items": [{"nombre": nombre, "precio": precio}],
+        "total": precio,
+        "fecha": fecha
+    }
+
+    return redirect('/ticket')
 
 # ---------------- FINALIZAR ----------------
 @app.route('/finalizar')

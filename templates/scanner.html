@@ -7,15 +7,15 @@
 </div>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
+
 <script>
-function onScanSuccess(text){
-    window.location.href = "/carrito/" + text;
+function onScanSuccess(decodedText){
+    window.location.href = "/vender/" + decodedText;
 }
+
 new Html5Qrcode("reader").start(
     { facingMode: "environment" },
     { fps: 10, qrbox: 250 },
     onScanSuccess
 );
 </script>
-
-{% endblock %}

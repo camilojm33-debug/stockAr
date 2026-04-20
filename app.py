@@ -119,7 +119,6 @@ def productos_page():
     productos = c.fetchall()
 
     conn.close()
-
     return render_template("productos.html", productos=productos)
 
 # ---------------- QR INDIVIDUAL ----------------
@@ -129,6 +128,24 @@ def qr_individual(codigo):
     filename = f"{codigo}.png"
     img.save(filename)
     return send_file(filename, as_attachment=True)
+
+# ---------------- QR MANUAL ----------------
+@app.route('/qr_manual', methods=['GET','POST'])
+def qr_manual():
+    if request.method == 'POST':
+        codigo = str(int(time.time()))
+        nombre = request.form['nombre']
+        precio = request.form['precio']
+
+        data = f"{codigo}|{nombre}|{precio}"
+
+        img = qrcode.make(data)
+        filename = f"{codigo}.png"
+        img.save(filename)
+
+        return send_file(filename, as_attachment=True)
+
+    return render_template("qr_manual.html")
 
 # ---------------- QR CONFIG ----------------
 @app.route('/qr_config')
@@ -142,7 +159,7 @@ def qr_config():
 
     return render_template("qr_config.html", productos=productos)
 
-# ---------------- QR GENERAR (5x5) ----------------
+# ---------------- QR GENERAR A4 ----------------
 @app.route('/qr_generar', methods=['POST'])
 def qr_generar():
     total = int(request.form['total'])
@@ -193,18 +210,42 @@ def qr_generar():
 
     return send_file("etiquetas_5x5.pdf", as_attachment=True)
 
-# ---------------- CARRITO ----------------
-@app.route('/carrito/<codigo>')
-def carrito(codigo):
+# ---------------- CARRITO INTELIGENTE ----------------
+@app.route('/carrito/<data>')
+def carrito(data):
     uid = session['user_id']
-    c = db().cursor()
 
-    c.execute("SELECT nombre,precio FROM productos WHERE codigo=? AND usuario_id=?", (codigo,uid))
-    p = c.fetchone()
+    partes = data.split("|")
 
-    if p:
+    conn = db()
+    c = conn.cursor()
+
+    if len(partes) == 3:
+        codigo, nombre, precio = partes
+
+        c.execute("SELECT nombre FROM productos WHERE codigo=? AND usuario_id=?", (codigo,uid))
+        existe = c.fetchone()
+
+        if not existe:
+            c.execute("""
+                INSERT INTO productos(usuario_id,codigo,nombre,categoria,cantidad,precio)
+                VALUES (?,?,?,?,?,?)
+            """, (uid, codigo, nombre, "QR", 1, precio))
+            conn.commit()
+
+        producto = (nombre, float(precio))
+
+    else:
+        c.execute("SELECT nombre,precio FROM productos WHERE codigo=? AND usuario_id=?", (data,uid))
+        producto = c.fetchone()
+
+    if producto:
         carrito = session.get("carrito", [])
-        carrito.append({"codigo":codigo,"nombre":p[0],"precio":p[1]})
+        carrito.append({
+            "codigo": partes[0],
+            "nombre": producto[0],
+            "precio": producto[1]
+        })
         session["carrito"] = carrito
 
     return redirect('/')
@@ -249,7 +290,6 @@ def historial():
     ventas = c.fetchall()
 
     conn.close()
-
     return render_template("historial.html", ventas=ventas)
 
 # ---------------- SCANNER ----------------

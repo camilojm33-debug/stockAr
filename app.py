@@ -1,8 +1,11 @@
 from flask import Flask, render_template, request, redirect, session, send_file
 import sqlite3, time, qrcode, os
 from datetime import datetime
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Image, Spacer
+
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Image, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+from reportlab.lib.units import cm
 
 app = Flask(__name__)
 app.secret_key = "stockar_pro"
@@ -51,19 +54,6 @@ def login():
             return redirect('/')
 
     return render_template("login.html")
-
-# ---------------- REGISTER ----------------
-@app.route('/register', methods=['GET','POST'])
-def register():
-    if request.method == 'POST':
-        conn = db()
-        conn.execute("INSERT INTO usuarios(username,password) VALUES (?,?)",
-                     (request.form['username'], request.form['password']))
-        conn.commit()
-        conn.close()
-        return redirect('/login')
-
-    return render_template("register.html")
 
 # ---------------- HOME ----------------
 @app.route('/')
@@ -118,6 +108,91 @@ def agregar():
 
     return redirect('/')
 
+# ---------------- PRODUCTOS ----------------
+@app.route('/productos')
+def productos_page():
+    uid = session['user_id']
+    conn = db()
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM productos WHERE usuario_id=?", (uid,))
+    productos = c.fetchall()
+
+    conn.close()
+
+    return render_template("productos.html", productos=productos)
+
+# ---------------- QR INDIVIDUAL ----------------
+@app.route('/qr_individual/<codigo>')
+def qr_individual(codigo):
+    img = qrcode.make(codigo)
+    filename = f"{codigo}.png"
+    img.save(filename)
+    return send_file(filename, as_attachment=True)
+
+# ---------------- QR CONFIG ----------------
+@app.route('/qr_config')
+def qr_config():
+    uid = session['user_id']
+    conn = db()
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM productos WHERE usuario_id=?", (uid,))
+    productos = c.fetchall()
+
+    return render_template("qr_config.html", productos=productos)
+
+# ---------------- QR GENERAR (5x5) ----------------
+@app.route('/qr_generar', methods=['POST'])
+def qr_generar():
+    total = int(request.form['total'])
+
+    elements = []
+    styles = getSampleStyleSheet()
+
+    data = []
+    fila = []
+    archivos = []
+
+    for i in range(1, total+1):
+        codigo = request.form[f'codigo_{i}']
+        precio = request.form[f'precio_{i}']
+
+        img = qrcode.make(codigo)
+        filename = f"{codigo}.png"
+        img.save(filename)
+        archivos.append(filename)
+
+        celda = [
+            Paragraph(f"<b>${precio}</b>", styles["Normal"]),
+            Image(filename, width=3.5*cm, height=3.5*cm)
+        ]
+
+        fila.append(celda)
+
+        if len(fila) == 4:
+            data.append(fila)
+            fila = []
+
+    if fila:
+        data.append(fila)
+
+    doc = SimpleDocTemplate("etiquetas_5x5.pdf")
+
+    tabla = Table(data, colWidths=5*cm, rowHeights=5*cm)
+    tabla.setStyle(TableStyle([
+        ('GRID',(0,0),(-1,-1),0.5,colors.black),
+        ('ALIGN',(0,0),(-1,-1),'CENTER')
+    ]))
+
+    elements.append(tabla)
+    doc.build(elements)
+
+    for f in archivos:
+        os.remove(f)
+
+    return send_file("etiquetas_5x5.pdf", as_attachment=True)
+
 # ---------------- CARRITO ----------------
 @app.route('/carrito/<codigo>')
 def carrito(codigo):
@@ -170,7 +245,7 @@ def historial():
     conn = db()
     c = conn.cursor()
 
-    c.execute("SELECT nombre,precio,fecha FROM ventas WHERE usuario_id=? ORDER BY id DESC", (uid,))
+    c.execute("SELECT nombre,precio,fecha FROM ventas WHERE usuario_id=?", (uid,))
     ventas = c.fetchall()
 
     conn.close()
@@ -182,91 +257,6 @@ def historial():
 def scanner():
     return render_template("scanner.html")
 
-# ---------------- QR A4 ETIQUETAS ----------------
-from reportlab.platypus import Table, TableStyle
-from reportlab.lib import colors
-
-@app.route('/qr')
-def qr():
-    uid = session['user_id']
-    conn = db()
-    c = conn.cursor()
-
-    c.execute("SELECT codigo,nombre,precio FROM productos WHERE usuario_id=?", (uid,))
-    productos = c.fetchall()
-
-    styles = getSampleStyleSheet()
-    data = []
-    fila = []
-
-    archivos = []
-
-    for i, p in enumerate(productos):
-        img = qrcode.make(p[0])
-        filename = f"{p[0]}.png"
-        img.save(filename)
-        archivos.append(filename)
-
-        celda = [
-            Paragraph(f"<b>{p[1]}</b>", styles["Normal"]),
-            Paragraph(f"${p[2]}", styles["Normal"]),
-            Image(filename, width=90, height=90)
-        ]
-
-        fila.append(celda)
-
-        if len(fila) == 3:
-            data.append(fila)
-            fila = []
-
-    if fila:
-        data.append(fila)
-
-    doc = SimpleDocTemplate("qr_grilla.pdf")
-    tabla = Table(data)
-    tabla.setStyle(TableStyle([
-        ('GRID',(0,0),(-1,-1),1,colors.black),
-        ('ALIGN',(0,0),(-1,-1),'CENTER')
-    ]))
-
-    doc.build([tabla])
-
-    for f in archivos:
-        os.remove(f)
-
-    return send_file("qr_grilla.pdf", as_attachment=True)
-@app.route('/qr_config')
-def qr_config():
-    uid = session['user_id']
-    conn = db()
-    c = conn.cursor()
-
-    c.execute("SELECT * FROM productos WHERE usuario_id=?", (uid,))
-    productos = c.fetchall()
-
-    return render_template("qr_config.html", productos=productos)
-@app.route('/productos')
-def productos_page():
-    if 'user_id' not in session:
-        return redirect('/login')
-
-    uid = session['user_id']
-    conn = db()
-    c = conn.cursor()
-
-    @app.route('/qr_individual/<codigo>')
-    def qr_individual(codigo):
-        img = qrcode.make(codigo)
-        filename = f"{codigo}.png"
-        img.save(filename)
-
-        return send_file(filename, as_attachment=True)
-    c.execute("SELECT * FROM productos WHERE usuario_id=?", (uid,))
-    productos = c.fetchall()
-
-    conn.close()
-
-    return render_template("productos.html", productos=productos)
 # ---------------- TICKET ----------------
 @app.route('/ticket')
 def ticket():

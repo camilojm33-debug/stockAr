@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, session, send_file
 import sqlite3, time, qrcode, os
 from datetime import datetime
 
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Image, Spacer, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Image, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from reportlab.lib.units import cm
@@ -74,17 +74,12 @@ def index():
     conn.close()
 
     total = sum([v[0] for v in ventas])
-    cantidad_ventas = len(ventas)
     carrito = session.get("carrito", [])
-
-    alertas = [p for p in productos if p[3] <= 3]
 
     return render_template("index.html",
         productos=productos,
         carrito=carrito,
-        total=total,
-        cantidad_ventas=cantidad_ventas,
-        alertas=alertas
+        total=total
     )
 
 # ---------------- AGREGAR ----------------
@@ -121,14 +116,6 @@ def productos_page():
     conn.close()
     return render_template("productos.html", productos=productos)
 
-# ---------------- QR INDIVIDUAL ----------------
-@app.route('/qr_individual/<codigo>')
-def qr_individual(codigo):
-    img = qrcode.make(codigo)
-    filename = f"{codigo}.png"
-    img.save(filename)
-    return send_file(filename, as_attachment=True)
-
 # ---------------- QR MANUAL ----------------
 @app.route('/qr_manual', methods=['GET','POST'])
 def qr_manual():
@@ -159,14 +146,12 @@ def qr_config():
 
     return render_template("qr_config.html", productos=productos)
 
-# ---------------- QR GENERAR A4 ----------------
+# ---------------- QR A4 OPTIMIZADO ----------------
 @app.route('/qr_generar', methods=['POST'])
 def qr_generar():
     total = int(request.form['total'])
 
-    elements = []
     styles = getSampleStyleSheet()
-
     data = []
     fila = []
     archivos = []
@@ -182,7 +167,7 @@ def qr_generar():
 
         celda = [
             Paragraph(f"<b>${precio}</b>", styles["Normal"]),
-            Image(filename, width=3.5*cm, height=3.5*cm)
+            Image(filename, width=3.8*cm, height=3.8*cm)
         ]
 
         fila.append(celda)
@@ -192,18 +177,32 @@ def qr_generar():
             fila = []
 
     if fila:
+        while len(fila) < 4:
+            fila.append("")
         data.append(fila)
 
-    doc = SimpleDocTemplate("etiquetas_5x5.pdf")
+    doc = SimpleDocTemplate(
+        "etiquetas_5x5.pdf",
+        pagesize=(21*cm, 29.7*cm),
+        leftMargin=0.5*cm,
+        rightMargin=0.5*cm,
+        topMargin=0.5*cm,
+        bottomMargin=0.5*cm
+    )
 
-    tabla = Table(data, colWidths=5*cm, rowHeights=5*cm)
+    tabla = Table(
+        data,
+        colWidths=[5*cm]*4,
+        rowHeights=[5*cm]*len(data)
+    )
+
     tabla.setStyle(TableStyle([
         ('GRID',(0,0),(-1,-1),0.5,colors.black),
-        ('ALIGN',(0,0),(-1,-1),'CENTER')
+        ('ALIGN',(0,0),(-1,-1),'CENTER'),
+        ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
     ]))
 
-    elements.append(tabla)
-    doc.build(elements)
+    doc.build([tabla])
 
     for f in archivos:
         os.remove(f)
@@ -214,7 +213,6 @@ def qr_generar():
 @app.route('/carrito/<data>')
 def carrito(data):
     uid = session['user_id']
-
     partes = data.split("|")
 
     conn = db()

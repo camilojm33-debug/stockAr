@@ -146,7 +146,7 @@ def qr_config():
 
     return render_template("qr_config.html", productos=productos)
 
-# ---------------- QR A4 OPTIMIZADO ----------------
+# ---------------- QR A4 PRO ----------------
 @app.route('/qr_generar', methods=['POST'])
 def qr_generar():
     total = int(request.form['total'])
@@ -159,6 +159,7 @@ def qr_generar():
     for i in range(1, total+1):
         codigo = request.form[f'codigo_{i}']
         precio = request.form[f'precio_{i}']
+        nombre = f"Producto {i}"
 
         img = qrcode.make(codigo)
         filename = f"{codigo}.png"
@@ -166,8 +167,9 @@ def qr_generar():
         archivos.append(filename)
 
         celda = [
-            Paragraph(f"<b>${precio}</b>", styles["Normal"]),
-            Image(filename, width=3.8*cm, height=3.8*cm)
+            Paragraph(f"<font size=14><b>${precio}</b></font>", styles["Normal"]),
+            Image(filename, width=3.5*cm, height=3.5*cm),
+            Paragraph(f"<font size=8>{nombre}</font>", styles["Normal"])
         ]
 
         fila.append(celda)
@@ -182,12 +184,12 @@ def qr_generar():
         data.append(fila)
 
     doc = SimpleDocTemplate(
-        "etiquetas_5x5.pdf",
+        "etiquetas_pro.pdf",
         pagesize=(21*cm, 29.7*cm),
-        leftMargin=0.5*cm,
-        rightMargin=0.5*cm,
-        topMargin=0.5*cm,
-        bottomMargin=0.5*cm
+        leftMargin=0.3*cm,
+        rightMargin=0.3*cm,
+        topMargin=0.3*cm,
+        bottomMargin=0.3*cm
     )
 
     tabla = Table(
@@ -197,7 +199,6 @@ def qr_generar():
     )
 
     tabla.setStyle(TableStyle([
-        ('GRID',(0,0),(-1,-1),0.5,colors.black),
         ('ALIGN',(0,0),(-1,-1),'CENTER'),
         ('VALIGN',(0,0),(-1,-1),'MIDDLE'),
     ]))
@@ -207,7 +208,7 @@ def qr_generar():
     for f in archivos:
         os.remove(f)
 
-    return send_file("etiquetas_5x5.pdf", as_attachment=True)
+    return send_file("etiquetas_pro.pdf", as_attachment=True)
 
 # ---------------- CARRITO INTELIGENTE ----------------
 @app.route('/carrito/<data>')

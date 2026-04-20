@@ -9,7 +9,6 @@ app.secret_key = "stockar_pro"
 
 DB = "database.db"
 
-# ---------------- DB ----------------
 def db():
     return sqlite3.connect(DB)
 
@@ -43,7 +42,7 @@ def init_db():
 
 init_db()
 
-# ---------------- AUTH ----------------
+# ---------------- LOGIN ----------------
 @app.route('/login', methods=['GET','POST'])
 def login():
     if request.method == 'POST':
@@ -58,6 +57,7 @@ def login():
 
     return render_template("login.html")
 
+# ---------------- REGISTER ----------------
 @app.route('/register', methods=['GET','POST'])
 def register():
     if request.method == 'POST':
@@ -89,30 +89,24 @@ def index():
     conn.close()
 
     total = sum([v[0] for v in ventas])
+    cantidad_ventas = len(ventas)
     carrito = session.get("carrito", [])
 
-    # ALERTAS
-    alertas = []
-    for p in productos:
-        if p[3] <= 3:
-            alertas.append({
-                "nombre": p[1],
-                "cantidad": p[3]
-            })
+    alertas = [p for p in productos if p[3] <= 3]
 
     return render_template("index.html",
         productos=productos,
         carrito=carrito,
         total=total,
+        cantidad_ventas=cantidad_ventas,
         alertas=alertas
     )
 
-# ---------------- AGREGAR PRODUCTO ----------------
+# ---------------- AGREGAR ----------------
 @app.route('/agregar', methods=['POST'])
 def agregar():
     uid = session['user_id']
-
-    codigo = str(int(time.time()))  # código automático
+    codigo = str(int(time.time()))
 
     conn = db()
     conn.execute("""
@@ -124,7 +118,6 @@ def agregar():
           request.form['categoria'],
           request.form['cantidad'],
           request.form['precio']))
-
     conn.commit()
     conn.close()
 
@@ -170,10 +163,6 @@ def finalizar():
     conn.commit()
     conn.close()
 
-    # backup simple
-    with open("backup.json","a") as f:
-        f.write(json.dumps({"total":total,"fecha":fecha})+"\n")
-
     session["ultima"] = {"items":carrito,"total":total,"fecha":fecha}
     session["carrito"] = []
 
@@ -193,32 +182,14 @@ def historial():
 
     return render_template("historial.html", ventas=ventas)
 
-# ---------------- TICKET ----------------
-@app.route('/ticket')
-def ticket():
-    return render_template("ticket.html", venta=session.get("ultima"))
-
-# ---------------- PDF ----------------
-@app.route('/pdf')
-def pdf():
-    venta = session.get("ultima")
-
-    doc = SimpleDocTemplate("ticket.pdf")
-    styles = getSampleStyleSheet()
-
-    content = [Paragraph("stockAr", styles["Title"])]
-
-    for i in venta["items"]:
-        content.append(Paragraph(f'{i["nombre"]} - ${i["precio"]}', styles["Normal"]))
-
-    content.append(Paragraph(f'Total: ${venta["total"]}', styles["Normal"]))
-    doc.build(content)
-
-    return send_file("ticket.pdf", as_attachment=True)
+# ---------------- SCANNER ----------------
+@app.route('/scanner')
+def scanner():
+    return render_template("scanner.html")
 
 # ---------------- QR A4 ----------------
 @app.route('/qr')
-def generar_qr():
+def qr():
     uid = session['user_id']
     conn = db()
     c = conn.cursor()
@@ -226,36 +197,35 @@ def generar_qr():
     c.execute("SELECT codigo,nombre,precio FROM productos WHERE usuario_id=?", (uid,))
     productos = c.fetchall()
 
-    doc = SimpleDocTemplate("qr_productos.pdf")
+    doc = SimpleDocTemplate("qr.pdf")
     content = []
     styles = getSampleStyleSheet()
 
-    @app.route('/scanner')
-    def scanner():
-        return render_template("scanner.html")
     archivos = []
 
-
     for p in productos:
-        data = f"{p[0]}"
+        data = p[0]
 
         img = qrcode.make(data)
-        filename = f"qr_{p[0]}.png"
+        filename = f"{p[0]}.png"
         img.save(filename)
         archivos.append(filename)
 
         content.append(Paragraph(f"{p[1]} - ${p[2]}", styles["Normal"]))
-        content.append(Image(filename, width=100, height=100))
-        content.append(Spacer(1,10))
+        content.append(Image(filename, width=120, height=120))
+        content.append(Spacer(1,15))
 
     doc.build(content)
 
-    # limpiar imágenes
     for f in archivos:
-        if os.path.exists(f):
-            os.remove(f)
+        os.remove(f)
 
-    return send_file("qr_productos.pdf", as_attachment=True)
+    return send_file("qr.pdf", as_attachment=True)
+
+# ---------------- TICKET ----------------
+@app.route('/ticket')
+def ticket():
+    return render_template("ticket.html", venta=session.get("ultima"))
 
 # ---------------- RUN ----------------
 if __name__ == "__main__":

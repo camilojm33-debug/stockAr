@@ -78,7 +78,12 @@ input{
 }
 </style>
 </head>
-
+<link rel="manifest" href="/static/manifest.json">
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/static/service-worker.js');
+}
+</script>
 <body>
 
 <div class="header">📦 stockAr PRO</div>

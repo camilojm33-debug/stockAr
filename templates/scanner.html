@@ -3,9 +3,8 @@
 
 <div class="card">
 <h3>📷 Escanear QR</h3>
-<p>Escaneá un producto para vender rápido</p>
 
-<div id="reader" style="width:100%;"></div>
+<div id="reader"></div>
 </div>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
@@ -15,10 +14,11 @@ function onScanSuccess(decodedText){
     window.location.href = "/carrito/" + decodedText;
 }
 
-new Html5QrcodeScanner("reader", {
-    fps: 10,
-    qrbox: 250
-}).render(onScanSuccess);
+new Html5Qrcode("reader").start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    onScanSuccess
+);
 </script>
 
 {% endblock %}

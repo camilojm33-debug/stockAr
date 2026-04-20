@@ -3,20 +3,20 @@
 
 <div class="card">
 <h3>➕ Agregar producto</h3>
-<p>Cargá productos con precio y stock</p>
+<p>Creá productos con precio y stock</p>
 
 <form method="POST" action="/agregar">
 <input name="nombre" placeholder="Nombre">
 <input name="categoria" placeholder="Categoría">
 <input name="cantidad" placeholder="Stock">
 <input name="precio" placeholder="Precio">
-<button class="btn">Guardar</button>
+<button class="btn">Guardar producto</button>
 </form>
 </div>
 
 {% for a in alertas %}
 <div class="alert">
-⚠️ Stock bajo: {{a.nombre}} ({{a.cantidad}})
+⚠️ Stock bajo: {{a[1]}} ({{a[3]}})
 </div>
 {% endfor %}
 
@@ -24,9 +24,9 @@
 <h3>📦 Productos</h3>
 
 {% for p in productos %}
-<div style="margin-bottom:10px;">
-<b>{{p[1]}}</b> - ${{p[4]}}<br>
-Stock: {{p[3]}}
+<div style="margin-bottom:12px;">
+<b>{{p[1]}}</b><br>
+$ {{p[4]}} | Stock: {{p[3]}}
 <a href="/carrito/{{p[0]}}">
 <button class="btn btn2">Agregar</button>
 </a>
@@ -47,9 +47,9 @@ Stock: {{p[3]}}
 </div>
 
 <div class="card">
-<h3>💰 Dashboard</h3>
+<h3>📊 Dashboard</h3>
 <p>Total vendido: ${{total}}</p>
-<p>Ventas realizadas: {{carrito|length}}</p>
+<p>Ventas: {{cantidad_ventas}}</p>
 </div>
 
 {% endblock %}

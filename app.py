@@ -197,7 +197,7 @@ def qr():
     c.execute("SELECT codigo,nombre,precio FROM productos WHERE usuario_id=?", (uid,))
     productos = c.fetchall()
 
-    doc = SimpleDocTemplate("qr.pdf")
+    doc = SimpleDocTemplate("qr_etiquetas.pdf")
     content = []
     styles = getSampleStyleSheet()
 
@@ -211,16 +211,18 @@ def qr():
         img.save(filename)
         archivos.append(filename)
 
-        content.append(Paragraph(f"{p[1]} - ${p[2]}", styles["Normal"]))
-        content.append(Image(filename, width=120, height=120))
-        content.append(Spacer(1,15))
+        # etiqueta tipo producto
+        content.append(Paragraph(f"<b>{p[1]}</b>", styles["Normal"]))
+        content.append(Paragraph(f"Precio: ${p[2]}", styles["Normal"]))
+        content.append(Image(filename, width=140, height=140))
+        content.append(Spacer(1,20))
 
     doc.build(content)
 
     for f in archivos:
         os.remove(f)
 
-    return send_file("qr.pdf", as_attachment=True)
+    return send_file("qr_etiquetas.pdf", as_attachment=True)
 
 # ---------------- TICKET ----------------
 @app.route('/ticket')

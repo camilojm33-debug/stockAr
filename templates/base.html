@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>stockAr</title>
 
+<link rel="manifest" href="/static/manifest.json">
+
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/static/service-worker.js');
+}
+</script>
+
 <style>
 body{
     background:#020617;
@@ -15,75 +23,65 @@ body{
 
 .header{
     background:#0f172a;
-    padding:15px;
+    padding:18px;
     text-align:center;
-    font-size:22px;
+    font-size:24px;
     font-weight:bold;
+}
+
+.card{
+    background:#0f172a;
+    margin:12px;
+    padding:18px;
+    border-radius:16px;
+}
+
+.btn{
+    background:#22c55e;
+    border:none;
+    padding:16px;
+    border-radius:10px;
+    color:white;
+    width:100%;
+    margin-top:8px;
+    font-size:18px;
+}
+
+.btn2{background:#3b82f6;}
+.btn3{background:#f59e0b;}
+
+input{
+    width:100%;
+    padding:12px;
+    margin-top:8px;
+    border-radius:10px;
+    border:none;
 }
 
 .nav{
     display:flex;
     justify-content:space-around;
     background:#020617;
-    padding:10px;
-    position:sticky;
+    padding:12px;
+    position:fixed;
     bottom:0;
+    width:100%;
 }
 
 .nav a{
     color:white;
     text-decoration:none;
-    font-size:14px;
+    font-size:20px;
 }
-
-.card{
-    background:#0f172a;
-    margin:10px;
-    padding:15px;
-    border-radius:12px;
-}
-
-.btn{
-    background:#22c55e;
-    border:none;
-    padding:12px;
-    border-radius:8px;
-    color:white;
-    width:100%;
-    margin-top:5px;
-    font-size:16px;
-}
-
-.btn2{
-    background:#3b82f6;
-}
-
-.btn3{
-    background:#f59e0b;
-}
-
 .alert{
     background:#ef4444;
-    padding:10px;
-    border-radius:8px;
+    padding:12px;
+    border-radius:10px;
     margin:10px;
-}
-
-input{
-    width:100%;
-    padding:10px;
-    margin-top:5px;
-    border-radius:8px;
-    border:none;
 }
 </style>
 </head>
-<link rel="manifest" href="/static/manifest.json">
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/static/service-worker.js');
-}
-</script>
+
 <body>
 
 <div class="header">📦 stockAr PRO</div>
@@ -91,10 +89,10 @@ if ('serviceWorker' in navigator) {
 {% block content %}{% endblock %}
 
 <div class="nav">
-    <a href="/">🏠 Inicio</a>
-    <a href="/scanner">📷 Scan</a>
-    <a href="/historial">📊 Historial</a>
-    <a href="/qr">🧾 QR</a>
+    <a href="/">🏠</a>
+    <a href="/scanner">📷</a>
+    <a href="/historial">📊</a>
+    <a href="/qr">🧾</a>
 </div>
 
 </body>

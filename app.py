@@ -235,6 +235,16 @@ def qr():
         os.remove(f)
 
     return send_file("qr_grilla.pdf", as_attachment=True)
+@app.route('/qr_config')
+def qr_config():
+    uid = session['user_id']
+    conn = db()
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM productos WHERE usuario_id=?", (uid,))
+    productos = c.fetchall()
+
+    return render_template("qr_config.html", productos=productos)
 @app.route('/productos')
 def productos_page():
     if 'user_id' not in session:

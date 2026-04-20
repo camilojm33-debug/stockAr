@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>🧾 Generar etiquetas QR</h2>
+<p>Podés editar los precios antes de imprimir</p>
+
+<form method="POST" action="/qr_generar">
+
+{% for p in productos %}
+<div class="card">
+<b>{{p[3]}}</b><br>
+
+<input type="hidden" name="codigo_{{loop.index}}" value="{{p[2]}}">
+
+<label>Precio:</label>
+<input name="precio_{{loop.index}}" value="{{p[6]}}">
+
+</div>
+{% endfor %}
+
+<input type="hidden" name="total" value="{{productos|length}}">
+
+<button class="btn">Generar hoja A4</button>
+
+</form>
+
+{% endblock %}

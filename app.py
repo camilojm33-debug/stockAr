@@ -116,6 +116,13 @@ def productos_page():
     conn.close()
     return render_template("productos.html", productos=productos)
 
+@app.route('/qr_individual/<codigo>')
+def qr_individual(codigo):
+    img = qrcode.make(codigo)
+    filename = f"{codigo}.png"
+    img.save(filename)
+    return send_file(filename, as_attachment=True)
+
 # ---------------- QR MANUAL ----------------
 @app.route('/qr_manual', methods=['GET','POST'])
 def qr_manual():

@@ -2,29 +2,32 @@
 {% block content %}
 
 <h2>📦 Productos</h2>
-<p>Lista de productos para vender o generar QR</p>
 
 {% for p in productos %}
 <div class="card">
-<b>{{p[2]}}</b><br>
+
+<b>{{p[3]}}</b><br>
 Precio: ${{p[6]}}<br>
 Stock: {{p[5]}}
 
+<br><br>
+
 <a href="/carrito/{{p[2]}}">
-<button class="btn">Agregar al carrito</button>
+<button class="btn">🛒 Agregar al carrito</button>
 </a>
 
-   <a href="/finalizar">
-<button class="btn">Finalizar venta</button>
+<a href="/finalizar">
+<button class="btn">💳 Finalizar venta</button>
 </a>
 
 <a href="/qr_individual/{{p[2]}}">
-<button class="btn">QR</button>
+<button class="btn">📦 QR</button>
 </a>
 
-  <a href="/vender/{{p[2]}}">
+<a href="/vender/{{p[2]}}">
 <button class="btn">💸 Vender directo</button>
 </a>
+
 </div>
 {% endfor %}
 

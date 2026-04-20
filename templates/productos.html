@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>📦 Productos</h2>
+<p>Lista de productos para vender o generar QR</p>
+
+{% for p in productos %}
+<div class="card">
+<b>{{p[2]}}</b><br>
+Precio: ${{p[6]}}<br>
+Stock: {{p[5]}}
+
+<a href="/carrito/{{p[2]}}">
+<button class="btn">Vender</button>
+</a>
+
+<a href="/qr_individual/{{p[2]}}">
+<button class="btn">QR</button>
+</a>
+
+</div>
+{% endfor %}
+
+{% endblock %}

@@ -5,42 +5,91 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link rel="manifest" href="/static/manifest.json">
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/static/service-worker.js');
-}
-</script>
 
 <style>
-  .btn{
-    background:linear-gradient(135deg,#22c55e,#16a34a);
+body{
+    margin:0;
+    font-family:Arial;
+    background:#020617;
+    color:white;
+    display:flex;
 }
 
-.header{
-    letter-spacing:1px;
+/* SIDEBAR */
+.sidebar{
+    width:220px;
+    background:#0f172a;
+    height:100vh;
+    padding:20px;
 }
 
+.sidebar a{
+    display:block;
+    color:white;
+    padding:12px;
+    text-decoration:none;
+    margin-bottom:5px;
+    border-radius:8px;
+}
+
+.sidebar a:hover{
+    background:#1e293b;
+}
+
+/* MAIN */
+.main{
+    flex:1;
+    padding:20px;
+}
+
+/* CARDS */
 .card{
-    box-shadow:0 0 10px rgba(0,0,0,0.5);
+    background:#0f172a;
+    padding:20px;
+    border-radius:12px;
+    margin-bottom:15px;
 }
-body{background:#020617;color:white;font-family:Arial;margin:0;}
-.header{background:#0f172a;padding:20px;text-align:center;font-size:24px;}
-.card{background:#0f172a;margin:12px;padding:18px;border-radius:15px;}
-.btn{background:#22c55e;padding:15px;border:none;width:100%;color:white;border-radius:10px;}
-.nav{position:fixed;bottom:0;width:100%;display:flex;justify-content:space-around;}
+
+/* GRID */
+.grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
+    gap:15px;
+}
+
+/* COLORES */
+.blue{background:#1d4ed8;}
+.green{background:#16a34a;}
+.purple{background:#9333ea;}
+.orange{background:#ea580c;}
+
+.btn{
+    background:#22c55e;
+    border:none;
+    padding:12px;
+    color:white;
+    border-radius:8px;
+    width:100%;
+    margin-top:10px;
+}
 </style>
 </head>
+
 <body>
 
-<div class="header">📦 stockAr PRO</div>
+<div class="sidebar">
+<h2>📦 stockAr</h2>
 
+<a href="/">🏠 Inicio</a>
+<a href="/productos">📦 Productos</a>
+<a href="/scanner">📷 Escanear</a>
+<a href="/historial">📊 Historial</a>
+<a href="/qr">🧾 QR</a>
+
+</div>
+
+<div class="main">
 {% block content %}{% endblock %}
-
-<div class="nav">
-<a href="/">🏠</a>
-<a href="/scanner">📷</a>
-<a href="/historial">📊</a>
-<a href="/qr">🧾</a>
 </div>
 
 </body>

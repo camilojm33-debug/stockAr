@@ -235,7 +235,28 @@ def qr():
         os.remove(f)
 
     return send_file("qr_grilla.pdf", as_attachment=True)
+@app.route('/productos')
+def productos_page():
+    if 'user_id' not in session:
+        return redirect('/login')
 
+    uid = session['user_id']
+    conn = db()
+    c = conn.cursor()
+
+    @app.route('/qr_individual/<codigo>')
+    def qr_individual(codigo):
+        img = qrcode.make(codigo)
+        filename = f"{codigo}.png"
+        img.save(filename)
+
+        return send_file(filename, as_attachment=True)
+    c.execute("SELECT * FROM productos WHERE usuario_id=?", (uid,))
+    productos = c.fetchall()
+
+    conn.close()
+
+    return render_template("productos.html", productos=productos)
 # ---------------- TICKET ----------------
 @app.route('/ticket')
 def ticket():

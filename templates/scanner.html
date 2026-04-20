@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card">
+<h3>📷 Escanear QR</h3>
+<p>Escaneá un producto para vender rápido</p>
+
+<div id="reader" style="width:100%;"></div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<script>
+function onScanSuccess(decodedText){
+    window.location.href = "/carrito/" + decodedText;
+}
+
+new Html5QrcodeScanner("reader", {
+    fps: 10,
+    qrbox: 250
+}).render(onScanSuccess);
+</script>
+
+{% endblock %}

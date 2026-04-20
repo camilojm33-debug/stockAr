@@ -5,30 +5,92 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>stockAr</title>
 
-<link rel="manifest" href="/static/manifest.json">
-
 <style>
 body{
-background:#020617;
-color:white;
-font-family:Arial;
-text-align:center;
+    background:#020617;
+    color:white;
+    font-family:Arial;
+    margin:0;
+}
+
+.header{
+    background:#0f172a;
+    padding:15px;
+    text-align:center;
+    font-size:22px;
+    font-weight:bold;
+}
+
+.nav{
+    display:flex;
+    justify-content:space-around;
+    background:#020617;
+    padding:10px;
+    position:sticky;
+    bottom:0;
+}
+
+.nav a{
+    color:white;
+    text-decoration:none;
+    font-size:14px;
 }
 
 .card{
-background:#0f172a;
-margin:10px;
-padding:15px;
-border-radius:10px;
+    background:#0f172a;
+    margin:10px;
+    padding:15px;
+    border-radius:12px;
+}
+
+.btn{
+    background:#22c55e;
+    border:none;
+    padding:12px;
+    border-radius:8px;
+    color:white;
+    width:100%;
+    margin-top:5px;
+    font-size:16px;
+}
+
+.btn2{
+    background:#3b82f6;
+}
+
+.btn3{
+    background:#f59e0b;
+}
+
+.alert{
+    background:#ef4444;
+    padding:10px;
+    border-radius:8px;
+    margin:10px;
+}
+
+input{
+    width:100%;
+    padding:10px;
+    margin-top:5px;
+    border-radius:8px;
+    border:none;
 }
 </style>
 </head>
 
 <body>
 
-<h2>📦 stockAr PRO</h2>
+<div class="header">📦 stockAr PRO</div>
 
 {% block content %}{% endblock %}
+
+<div class="nav">
+    <a href="/">🏠 Inicio</a>
+    <a href="/scanner">📷 Scan</a>
+    <a href="/historial">📊 Historial</a>
+    <a href="/qr">🧾 QR</a>
+</div>
 
 </body>
 </html>

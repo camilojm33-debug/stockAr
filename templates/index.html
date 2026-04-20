@@ -1,45 +1,55 @@
 {% extends "base.html" %}
-
 {% block content %}
 
 <div class="card">
 <h3>➕ Agregar producto</h3>
+<p>Cargá productos con precio y stock</p>
 
-<form action="/agregar" method="POST">
-<input name="codigo" placeholder="Código"><br>
-<input name="nombre" placeholder="Nombre"><br>
-<input name="categoria" placeholder="Categoría"><br>
-<input name="cantidad" placeholder="Cantidad"><br>
-<input name="precio" placeholder="Precio"><br>
-
-<button>Guardar</button>
+<form method="POST" action="/agregar">
+<input name="nombre" placeholder="Nombre">
+<input name="categoria" placeholder="Categoría">
+<input name="cantidad" placeholder="Stock">
+<input name="precio" placeholder="Precio">
+<button class="btn">Guardar</button>
 </form>
 </div>
 
+{% for a in alertas %}
+<div class="alert">
+⚠️ Stock bajo: {{a.nombre}} ({{a.cantidad}})
+</div>
+{% endfor %}
+
 <div class="card">
-<h3>📋 Inventario</h3>
+<h3>📦 Productos</h3>
 
 {% for p in productos %}
-<p>{{p[1]}} - ${{p[4]}}</p>
-
+<div style="margin-bottom:10px;">
+<b>{{p[1]}}</b> - ${{p[4]}}<br>
+Stock: {{p[3]}}
 <a href="/carrito/{{p[0]}}">
-<button>Vender</button>
+<button class="btn btn2">Agregar</button>
 </a>
-
+</div>
 {% endfor %}
 </div>
 
 <div class="card">
 <h3>🛒 Carrito</h3>
 
-{% for i in carrito %}
-<p>{{i.nombre}} - ${{i.precio}}</p>
+{% for c in carrito %}
+<div>{{c.nombre}} - ${{c.precio}}</div>
 {% endfor %}
 
 <a href="/finalizar">
-<button>Finalizar</button>
+<button class="btn">Finalizar venta</button>
 </a>
+</div>
 
+<div class="card">
+<h3>💰 Dashboard</h3>
+<p>Total vendido: ${{total}}</p>
+<p>Ventas realizadas: {{carrito|length}}</p>
 </div>
 
 {% endblock %}

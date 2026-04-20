@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, session, send_file
-import sqlite3, json
+import sqlite3, json, time, qrcode, os
 from datetime import datetime
-from reportlab.platypus import SimpleDocTemplate, Paragraph
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Image, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 
 app = Flask(__name__)
@@ -90,7 +90,15 @@ def index():
 
     total = sum([v[0] for v in ventas])
     carrito = session.get("carrito", [])
-    alertas = [p for p in productos if p[3] <= 3]
+
+    # ALERTAS
+    alertas = []
+    for p in productos:
+        if p[3] <= 3:
+            alertas.append({
+                "nombre": p[1],
+                "cantidad": p[3]
+            })
 
     return render_template("index.html",
         productos=productos,
@@ -99,17 +107,19 @@ def index():
         alertas=alertas
     )
 
-# ---------------- PRODUCTOS ----------------
+# ---------------- AGREGAR PRODUCTO ----------------
 @app.route('/agregar', methods=['POST'])
 def agregar():
     uid = session['user_id']
+
+    codigo = str(int(time.time()))  # código automático
 
     conn = db()
     conn.execute("""
         INSERT INTO productos(usuario_id,codigo,nombre,categoria,cantidad,precio)
         VALUES (?,?,?,?,?,?)
     """, (uid,
-          request.form['codigo'],
+          codigo,
           request.form['nombre'],
           request.form['categoria'],
           request.form['cantidad'],
@@ -160,7 +170,7 @@ def finalizar():
     conn.commit()
     conn.close()
 
-    # backup
+    # backup simple
     with open("backup.json","a") as f:
         f.write(json.dumps({"total":total,"fecha":fecha})+"\n")
 
@@ -168,6 +178,20 @@ def finalizar():
     session["carrito"] = []
 
     return redirect('/ticket')
+
+# ---------------- HISTORIAL ----------------
+@app.route('/historial')
+def historial():
+    uid = session['user_id']
+    conn = db()
+    c = conn.cursor()
+
+    c.execute("SELECT nombre,precio,fecha FROM ventas WHERE usuario_id=? ORDER BY id DESC", (uid,))
+    ventas = c.fetchall()
+
+    conn.close()
+
+    return render_template("historial.html", ventas=ventas)
 
 # ---------------- TICKET ----------------
 @app.route('/ticket')
@@ -192,5 +216,47 @@ def pdf():
 
     return send_file("ticket.pdf", as_attachment=True)
 
+# ---------------- QR A4 ----------------
+@app.route('/qr')
+def generar_qr():
+    uid = session['user_id']
+    conn = db()
+    c = conn.cursor()
+
+    c.execute("SELECT codigo,nombre,precio FROM productos WHERE usuario_id=?", (uid,))
+    productos = c.fetchall()
+
+    doc = SimpleDocTemplate("qr_productos.pdf")
+    content = []
+    styles = getSampleStyleSheet()
+
+    @app.route('/scanner')
+    def scanner():
+        return render_template("scanner.html")
+    archivos = []
+
+
+    for p in productos:
+        data = f"{p[0]}"
+
+        img = qrcode.make(data)
+        filename = f"qr_{p[0]}.png"
+        img.save(filename)
+        archivos.append(filename)
+
+        content.append(Paragraph(f"{p[1]} - ${p[2]}", styles["Normal"]))
+        content.append(Image(filename, width=100, height=100))
+        content.append(Spacer(1,10))
+
+    doc.build(content)
+
+    # limpiar imágenes
+    for f in archivos:
+        if os.path.exists(f):
+            os.remove(f)
+
+    return send_file("qr_productos.pdf", as_attachment=True)
+
+# ---------------- RUN ----------------
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)

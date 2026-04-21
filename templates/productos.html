@@ -3,32 +3,35 @@
 
 <h2>📦 Productos</h2>
 
-{% for p in productos %}
-<div class="card">
+<input id="buscador" placeholder="Buscar..." onkeyup="filtrar()">
 
+{% for p in productos %}
+<div class="card producto">
 <b>{{p[3]}}</b><br>
 Precio: ${{p[6]}}<br>
-Stock: {{p[5]}}
+
+Stock:
+<span {% if p[5] <= 5 %} style="color:red" {% endif %}>
+{{p[5]}}
+</span>
 
 <br><br>
 
-<a href="/carrito/{{p[2]}}">
-<button class="btn">🛒 Agregar al carrito</button>
-</a>
-
-<a href="/finalizar">
-<button class="btn">💳 Finalizar venta</button>
-</a>
-
-<a href="/qr_individual/{{p[2]}}">
-<button class="btn">📦 QR</button>
-</a>
-
-<a href="/vender/{{p[2]}}">
-<button class="btn">💸 Vender directo</button>
-</a>
+<a href="/vender/{{p[2]}}"><button class="btn">💸</button></a>
+<a href="/qr_individual/{{p[2]}}"><button class="btn">QR</button></a>
+<a href="/eliminar/{{p[0]}}"><button class="btn" style="background:red">🗑</button></a>
 
 </div>
 {% endfor %}
+
+<script>
+function filtrar(){
+let input=document.getElementById("buscador").value.toLowerCase();
+let items=document.getElementsByClassName("producto");
+for(let i of items){
+i.style.display=i.innerText.toLowerCase().includes(input)?"block":"none";
+}
+}
+</script>
 
 {% endblock %}

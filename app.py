@@ -4,7 +4,6 @@ from datetime import datetime
 
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Image, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib import colors
 from reportlab.lib.units import cm
 
 app = Flask(__name__)
@@ -20,6 +19,7 @@ def init_db():
     c = conn.cursor()
 
     c.execute("CREATE TABLE IF NOT EXISTS usuarios(id INTEGER PRIMARY KEY, username TEXT, password TEXT)")
+
     c.execute("""CREATE TABLE IF NOT EXISTS productos(
         id INTEGER PRIMARY KEY,
         usuario_id INTEGER,
@@ -28,6 +28,7 @@ def init_db():
         categoria TEXT,
         cantidad INTEGER,
         precio REAL)""")
+
     c.execute("""CREATE TABLE IF NOT EXISTS ventas(
         id INTEGER PRIMARY KEY,
         usuario_id INTEGER,
@@ -55,6 +56,19 @@ def login():
 
     return render_template("login.html")
 
+# ---------------- REGISTER ----------------
+@app.route('/register', methods=['GET','POST'])
+def register():
+    if request.method == 'POST':
+        conn = db()
+        conn.execute("INSERT INTO usuarios(username,password) VALUES (?,?)",
+                     (request.form['username'], request.form['password']))
+        conn.commit()
+        conn.close()
+        return redirect('/login')
+
+    return render_template("register.html")
+
 # ---------------- HOME ----------------
 @app.route('/')
 def index():
@@ -65,7 +79,7 @@ def index():
     conn = db()
     c = conn.cursor()
 
-    c.execute("SELECT codigo,nombre,categoria,cantidad,precio FROM productos WHERE usuario_id=?", (uid,))
+    c.execute("SELECT * FROM productos WHERE usuario_id=?", (uid,))
     productos = c.fetchall()
 
     c.execute("SELECT precio FROM ventas WHERE usuario_id=?", (uid,))
@@ -74,15 +88,11 @@ def index():
     conn.close()
 
     total = sum([v[0] for v in ventas])
-    carrito = session.get("carrito", [])
-
-    # 🔥 ARREGLOS
     cantidad_ventas = len(ventas)
-    alertas = [p for p in productos if p[3] <= 5]
+    alertas = [p for p in productos if p[5] <= 5]
 
     return render_template("index.html",
         productos=productos,
-        carrito=carrito,
         total=total,
         cantidad_ventas=cantidad_ventas,
         alertas=alertas
@@ -111,17 +121,23 @@ def agregar():
 
 # ---------------- PRODUCTOS ----------------
 @app.route('/productos')
-def productos_page():
+def productos():
     uid = session['user_id']
     conn = db()
-    c = conn.cursor()
-
-    c.execute("SELECT * FROM productos WHERE usuario_id=?", (uid,))
-    productos = c.fetchall()
-
+    productos = conn.execute("SELECT * FROM productos WHERE usuario_id=?", (uid,)).fetchall()
     conn.close()
     return render_template("productos.html", productos=productos)
 
+@app.route('/eliminar/<int:id>')
+def eliminar(id):
+    uid = session['user_id']
+    conn = db()
+    conn.execute("DELETE FROM productos WHERE id=? AND usuario_id=?", (id, uid))
+    conn.commit()
+    conn.close()
+    return redirect('/productos')
+
+# ---------------- QR ----------------
 @app.route('/qr_individual/<codigo>')
 def qr_individual(codigo):
     img = qrcode.make(codigo)
@@ -129,203 +145,91 @@ def qr_individual(codigo):
     img.save(filename)
     return send_file(filename, as_attachment=True)
 
-# ---------------- QR MANUAL ----------------
 @app.route('/qr_manual', methods=['GET','POST'])
 def qr_manual():
     if request.method == 'POST':
         codigo = str(int(time.time()))
-        nombre = request.form['nombre']
-        precio = request.form['precio']
-
-        data = f"{codigo}|{nombre}|{precio}"
-
+        data = f"{codigo}|{request.form['nombre']}|{request.form['precio']}"
         img = qrcode.make(data)
         filename = f"{codigo}.png"
         img.save(filename)
-
         return send_file(filename, as_attachment=True)
 
     return render_template("qr_manual.html")
 
-# ---------------- QR CONFIG ----------------
 @app.route('/qr_config')
 def qr_config():
     uid = session['user_id']
     conn = db()
-    c = conn.cursor()
-
-    c.execute("SELECT * FROM productos WHERE usuario_id=?", (uid,))
-    productos = c.fetchall()
-
+    productos = conn.execute("SELECT * FROM productos WHERE usuario_id=?", (uid,)).fetchall()
     conn.close()
     return render_template("qr_config.html", productos=productos)
 
-# ---------------- QR GENERAR ----------------
 @app.route('/qr_generar', methods=['POST'])
 def qr_generar():
-    try:
-        total = int(request.form.get('total', 0))
+    styles = getSampleStyleSheet()
+    data = []
+    fila = []
 
-        if total == 0:
-            return "No hay productos para generar etiquetas"
+    total = int(request.form.get("total", 0))
 
-        styles = getSampleStyleSheet()
-        data = []
-        fila = []
-        archivos = []
+    for i in range(1, total+1):
+        codigo = request.form.get(f'codigo_{i}')
+        precio = request.form.get(f'precio_{i}')
+        nombre = request.form.get(f'nombre_{i}')
 
-        for i in range(1, total+1):
-            codigo = request.form.get(f'codigo_{i}')
-            precio = request.form.get(f'precio_{i}')
-            nombre = request.form.get(f'nombre_{i}', 'Producto')
+        img = qrcode.make(codigo)
+        filename = f"{codigo}.png"
+        img.save(filename)
 
-            if not codigo:
-                continue
+        celda = [
+            Paragraph(f"<b>${precio}</b>", styles["Normal"]),
+            Image(filename, width=3*cm, height=3*cm),
+            Paragraph(nombre, styles["Normal"])
+        ]
 
-            img = qrcode.make(codigo)
-            filename = f"{codigo}.png"
-            img.save(filename)
-            archivos.append(filename)
+        fila.append(celda)
 
-            celda = [
-                Paragraph(f"<font size=14><b>${precio}</b></font>", styles["Normal"]),
-                Image(filename, width=3.5*cm, height=3.5*cm),
-                Paragraph(f"<font size=8>{nombre}</font>", styles["Normal"])
-            ]
-
-            fila.append(celda)
-
-            if len(fila) == 4:
-                data.append(fila)
-                fila = []
-
-        if fila:
-            while len(fila) < 4:
-                fila.append("")
+        if len(fila) == 4:
             data.append(fila)
+            fila = []
 
-        doc = SimpleDocTemplate("etiquetas.pdf", pagesize=(21*cm, 29.7*cm))
+    if fila:
+        data.append(fila)
 
-        tabla = Table(data, colWidths=[5*cm]*4)
-        tabla.setStyle(TableStyle([
-            ('ALIGN',(0,0),(-1,-1),'CENTER'),
-        ]))
+    doc = SimpleDocTemplate("etiquetas.pdf")
+    doc.build([Table(data)])
 
-        doc.build([tabla])
+    return send_file("etiquetas.pdf", as_attachment=True)
 
-        for f in archivos:
-            os.remove(f)
-
-        return send_file("etiquetas.pdf", as_attachment=True)
-
-    except Exception as e:
-        return f"Error generando PDF: {str(e)}"
-
-# ---------------- CARRITO ----------------
-@app.route('/carrito/<data>')
-def carrito(data):
+# ---------------- VENTA ----------------
+@app.route('/vender/<codigo>')
+def vender(codigo):
     uid = session['user_id']
-    partes = data.split("|")
-
     conn = db()
     c = conn.cursor()
 
-    if len(partes) == 3:
-        codigo, nombre, precio = partes
-
-        c.execute("SELECT nombre FROM productos WHERE codigo=? AND usuario_id=?", (codigo,uid))
-        existe = c.fetchone()
-
-        if not existe:
-            c.execute("""
-                INSERT INTO productos(usuario_id,codigo,nombre,categoria,cantidad,precio)
-                VALUES (?,?,?,?,?,?)
-            """, (uid, codigo, nombre, "QR", 1, precio))
-            conn.commit()
-
-        producto = (nombre, float(precio))
-
-    else:
-        c.execute("SELECT nombre,precio FROM productos WHERE codigo=? AND usuario_id=?", (data,uid))
-        producto = c.fetchone()
-
-    if producto:
-        carrito_session = session.get("carrito", [])
-        carrito_session.append({
-            "codigo": partes[0],
-            "nombre": producto[0],
-            "precio": producto[1]
-        })
-        session["carrito"] = carrito_session
-
-    conn.close()
-    return redirect('/')
-
-# ---------------- VENTA DIRECTA ----------------
-@app.route('/vender/<data>')
-def vender(data):
-    uid = session['user_id']
-    partes = data.split("|")
-
-    conn = db()
-    c = conn.cursor()
-
-    if len(partes) == 3:
-        codigo, nombre, precio = partes
-        producto = (nombre, float(precio))
-    else:
-        c.execute("SELECT nombre,precio FROM productos WHERE codigo=? AND usuario_id=?", (data,uid))
-        producto = c.fetchone()
+    c.execute("SELECT nombre,precio FROM productos WHERE codigo=? AND usuario_id=?", (codigo,uid))
+    producto = c.fetchone()
 
     if not producto:
-        return "Producto no encontrado"
+        return "No existe"
 
     nombre, precio = producto
     fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
 
-    c.execute("INSERT INTO ventas VALUES (NULL,?,?,?,?)",
-              (uid, nombre, precio, fecha))
+    c.execute("INSERT INTO ventas VALUES (NULL,?,?,?,?)", (uid,nombre,precio,fecha))
 
-    c.execute("UPDATE productos SET cantidad=cantidad-1 WHERE codigo=? AND usuario_id=?",
-              (partes[0], uid))
-
-    conn.commit()
-    conn.close()
-
-    session["ultima"] = {
-        "items": [{"nombre": nombre, "precio": precio}],
-        "total": precio,
-        "fecha": fecha
-    }
-
-    return redirect('/ticket')
-
-# ---------------- FINALIZAR ----------------
-@app.route('/finalizar')
-def finalizar():
-    uid = session['user_id']
-    carrito = session.get("carrito", [])
-
-    conn = db()
-    c = conn.cursor()
-
-    total = 0
-    fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
-
-    for item in carrito:
-        total += item["precio"]
-
-        c.execute("INSERT INTO ventas VALUES (NULL,?,?,?,?)",
-                  (uid,item["nombre"],item["precio"],fecha))
-
-        c.execute("UPDATE productos SET cantidad=cantidad-1 WHERE codigo=? AND usuario_id=?",
-                  (item["codigo"],uid))
+    c.execute("""
+    UPDATE productos 
+    SET cantidad = CASE WHEN cantidad > 0 THEN cantidad-1 ELSE 0 END
+    WHERE codigo=? AND usuario_id=?
+    """,(codigo,uid))
 
     conn.commit()
     conn.close()
 
-    session["ultima"] = {"items":carrito,"total":total,"fecha":fecha}
-    session["carrito"] = []
+    session["ultima"] = {"items":[{"nombre":nombre,"precio":precio}],"total":precio}
 
     return redirect('/ticket')
 
@@ -334,24 +238,14 @@ def finalizar():
 def historial():
     uid = session['user_id']
     conn = db()
-    c = conn.cursor()
-
-    c.execute("SELECT nombre,precio,fecha FROM ventas WHERE usuario_id=?", (uid,))
-    ventas = c.fetchall()
-
+    ventas = conn.execute("SELECT nombre,precio,fecha FROM ventas WHERE usuario_id=?", (uid,)).fetchall()
     conn.close()
     return render_template("historial.html", ventas=ventas)
-
-# ---------------- SCANNER ----------------
-@app.route('/scanner')
-def scanner():
-    return render_template("scanner.html")
 
 # ---------------- TICKET ----------------
 @app.route('/ticket')
 def ticket():
     return render_template("ticket.html", venta=session.get("ultima"))
 
-# ---------------- RUN ----------------
 if __name__ == "__main__":
     app.run(debug=True)

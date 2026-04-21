@@ -1,251 +1,242 @@
-from flask import Flask, render_template, request, redirect, session, send_file
-import sqlite3, time, qrcode, os
+import sqlite3
+from tkinter import *
+from tkinter import messagebox
 from datetime import datetime
+from openpyxl import Workbook
 
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Image, Table, TableStyle
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.units import cm
+BG = "#121212"
+CARD = "#1f1f2e"
+TXT = "white"
 
-app = Flask(__name__)
-app.secret_key = "stockar_pro"
+usuario_actual = None
+rol_actual = None
 
-DB = "database.db"
+# =========================
+# DB
+# =========================
+def crear_db():
+    conn = sqlite3.connect("stock.db")
+    cursor = conn.cursor()
 
-def db():
-    return sqlite3.connect(DB)
-
-def init_db():
-    conn = db()
-    c = conn.cursor()
-
-    c.execute("CREATE TABLE IF NOT EXISTS usuarios(id INTEGER PRIMARY KEY, username TEXT, password TEXT)")
-
-    c.execute("""CREATE TABLE IF NOT EXISTS productos(
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS usuarios (
         id INTEGER PRIMARY KEY,
-        usuario_id INTEGER,
-        codigo TEXT,
-        nombre TEXT,
-        categoria TEXT,
-        cantidad INTEGER,
-        precio REAL)""")
-
-    c.execute("""CREATE TABLE IF NOT EXISTS ventas(
-        id INTEGER PRIMARY KEY,
-        usuario_id INTEGER,
-        nombre TEXT,
-        precio REAL,
-        fecha TEXT)""")
-
-    conn.commit()
-    conn.close()
-
-init_db()
-
-# ---------------- LOGIN ----------------
-@app.route('/login', methods=['GET','POST'])
-def login():
-    if request.method == 'POST':
-        c = db().cursor()
-        c.execute("SELECT id FROM usuarios WHERE username=? AND password=?",
-                  (request.form['username'], request.form['password']))
-        user = c.fetchone()
-
-        if user:
-            session['user_id'] = user[0]
-            return redirect('/')
-
-    return render_template("login.html")
-
-# ---------------- REGISTER ----------------
-@app.route('/register', methods=['GET','POST'])
-def register():
-    if request.method == 'POST':
-        conn = db()
-        conn.execute("INSERT INTO usuarios(username,password) VALUES (?,?)",
-                     (request.form['username'], request.form['password']))
-        conn.commit()
-        conn.close()
-        return redirect('/login')
-
-    return render_template("register.html")
-
-# ---------------- HOME ----------------
-@app.route('/')
-def index():
-    if 'user_id' not in session:
-        return redirect('/login')
-
-    uid = session['user_id']
-    conn = db()
-    c = conn.cursor()
-
-    c.execute("SELECT * FROM productos WHERE usuario_id=?", (uid,))
-    productos = c.fetchall()
-
-    c.execute("SELECT precio FROM ventas WHERE usuario_id=?", (uid,))
-    ventas = c.fetchall()
-
-    conn.close()
-
-    total = sum([v[0] for v in ventas])
-    cantidad_ventas = len(ventas)
-    alertas = [p for p in productos if p[5] <= 5]
-
-    return render_template("index.html",
-        productos=productos,
-        total=total,
-        cantidad_ventas=cantidad_ventas,
-        alertas=alertas
+        username TEXT,
+        password TEXT,
+        rol TEXT
     )
+    """)
 
-# ---------------- AGREGAR ----------------
-@app.route('/agregar', methods=['POST'])
+    cursor.execute("CREATE TABLE IF NOT EXISTS productos (id INTEGER PRIMARY KEY, nombre TEXT, precio REAL, stock INTEGER)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS ventas (id INTEGER PRIMARY KEY, producto_id INTEGER, cantidad INTEGER, fecha TEXT)")
+
+    cursor.execute("SELECT * FROM usuarios WHERE username='admin'")
+    if not cursor.fetchone():
+        cursor.execute("INSERT INTO usuarios VALUES(NULL,'admin','1234','admin')")
+
+    conn.commit()
+    conn.close()
+
+# =========================
+# EXPORTAR A EXCEL
+# =========================
+def exportar_productos():
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Productos"
+
+    ws.append(["ID", "Nombre", "Precio", "Stock"])
+
+    conn = sqlite3.connect("stock.db")
+    cursor = conn.cursor()
+
+    for p in cursor.execute("SELECT * FROM productos"):
+        ws.append(p)
+
+    conn.close()
+
+    wb.save("productos.xlsx")
+    messagebox.showinfo("Excel", "Productos exportados")
+
+def exportar_ventas():
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Ventas"
+
+    ws.append(["ID", "Producto", "Cantidad", "Fecha"])
+
+    conn = sqlite3.connect("stock.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT ventas.id, productos.nombre, ventas.cantidad, ventas.fecha
+    FROM ventas JOIN productos ON ventas.producto_id = productos.id
+    """)
+
+    for v in cursor.fetchall():
+        ws.append(v)
+
+    conn.close()
+
+    wb.save("ventas.xlsx")
+    messagebox.showinfo("Excel", "Ventas exportadas")
+
+# =========================
+# LOGIN
+# =========================
+def login():
+    global usuario_actual, rol_actual
+
+    conn = sqlite3.connect("stock.db")
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT username, rol FROM usuarios WHERE username=? AND password=?",
+                   (entry_user.get(), entry_pass.get()))
+    r = cursor.fetchone()
+
+    conn.close()
+
+    if r:
+        usuario_actual, rol_actual = r
+        ventana_login.destroy()
+        abrir_sistema()
+    else:
+        messagebox.showerror("Error", "Datos incorrectos")
+
+# =========================
+# SISTEMA
+# =========================
+def abrir_sistema():
+    global lista
+
+    app = Tk()
+    app.title("Stock PRO EMPRESARIAL")
+    app.geometry("950x650")
+    app.config(bg=BG)
+
+    Label(app, text=f"Usuario: {usuario_actual} ({rol_actual})", bg=BG, fg="cyan").pack()
+
+    # BOTONES EXCEL (solo admin)
+    if rol_actual == "admin":
+        frame_excel = Frame(app, bg=CARD)
+        frame_excel.pack(pady=5)
+
+        Button(frame_excel, text="Exportar Productos", command=exportar_productos).pack(side=LEFT, padx=5)
+        Button(frame_excel, text="Exportar Ventas", command=exportar_ventas).pack(side=LEFT, padx=5)
+
+    # PRODUCTOS
+    frame = Frame(app, bg=CARD)
+    frame.pack(pady=10)
+
+    global e_nombre, e_precio, e_stock, e_cant
+
+    e_nombre = Entry(frame)
+    e_nombre.grid(row=0, column=1)
+    Label(frame, text="Nombre", bg=CARD, fg=TXT).grid(row=0, column=0)
+
+    e_precio = Entry(frame)
+    e_precio.grid(row=1, column=1)
+    Label(frame, text="Precio", bg=CARD, fg=TXT).grid(row=1, column=0)
+
+    e_stock = Entry(frame)
+    e_stock.grid(row=2, column=1)
+    Label(frame, text="Stock", bg=CARD, fg=TXT).grid(row=2, column=0)
+
+    if rol_actual == "admin":
+        Button(frame, text="Agregar", command=agregar).grid(row=3, column=0)
+        Button(frame, text="Eliminar", command=eliminar).grid(row=3, column=1)
+
+    lista = Listbox(app, width=100)
+    lista.pack(pady=10)
+
+    e_cant = Entry(app)
+    e_cant.pack()
+
+    Button(app, text="Vender", command=vender).pack()
+
+    actualizar()
+    app.mainloop()
+
+# =========================
+# FUNCIONES
+# =========================
 def agregar():
-    uid = session['user_id']
-    codigo = str(int(time.time()))
+    conn = sqlite3.connect("stock.db")
+    cursor = conn.cursor()
 
-    conn = db()
-    conn.execute("""
-        INSERT INTO productos(usuario_id,codigo,nombre,categoria,cantidad,precio)
-        VALUES (?,?,?,?,?,?)
-    """, (uid,
-          codigo,
-          request.form['nombre'],
-          request.form['categoria'],
-          request.form['cantidad'],
-          request.form['precio']))
-    conn.commit()
-    conn.close()
-
-    return redirect('/')
-
-# ---------------- PRODUCTOS ----------------
-@app.route('/productos')
-def productos():
-    uid = session['user_id']
-    conn = db()
-    productos = conn.execute("SELECT * FROM productos WHERE usuario_id=?", (uid,)).fetchall()
-    conn.close()
-    return render_template("productos.html", productos=productos)
-
-@app.route('/eliminar/<int:id>')
-def eliminar(id):
-    uid = session['user_id']
-    conn = db()
-    conn.execute("DELETE FROM productos WHERE id=? AND usuario_id=?", (id, uid))
-    conn.commit()
-    conn.close()
-    return redirect('/productos')
-
-# ---------------- QR ----------------
-@app.route('/qr_individual/<codigo>')
-def qr_individual(codigo):
-    img = qrcode.make(codigo)
-    filename = f"{codigo}.png"
-    img.save(filename)
-    return send_file(filename, as_attachment=True)
-
-@app.route('/qr_manual', methods=['GET','POST'])
-def qr_manual():
-    if request.method == 'POST':
-        codigo = str(int(time.time()))
-        data = f"{codigo}|{request.form['nombre']}|{request.form['precio']}"
-        img = qrcode.make(data)
-        filename = f"{codigo}.png"
-        img.save(filename)
-        return send_file(filename, as_attachment=True)
-
-    return render_template("qr_manual.html")
-
-@app.route('/qr_config')
-def qr_config():
-    uid = session['user_id']
-    conn = db()
-    productos = conn.execute("SELECT * FROM productos WHERE usuario_id=?", (uid,)).fetchall()
-    conn.close()
-    return render_template("qr_config.html", productos=productos)
-
-@app.route('/qr_generar', methods=['POST'])
-def qr_generar():
-    styles = getSampleStyleSheet()
-    data = []
-    fila = []
-
-    total = int(request.form.get("total", 0))
-
-    for i in range(1, total+1):
-        codigo = request.form.get(f'codigo_{i}')
-        precio = request.form.get(f'precio_{i}')
-        nombre = request.form.get(f'nombre_{i}')
-
-        img = qrcode.make(codigo)
-        filename = f"{codigo}.png"
-        img.save(filename)
-
-        celda = [
-            Paragraph(f"<b>${precio}</b>", styles["Normal"]),
-            Image(filename, width=3*cm, height=3*cm),
-            Paragraph(nombre, styles["Normal"])
-        ]
-
-        fila.append(celda)
-
-        if len(fila) == 4:
-            data.append(fila)
-            fila = []
-
-    if fila:
-        data.append(fila)
-
-    doc = SimpleDocTemplate("etiquetas.pdf")
-    doc.build([Table(data)])
-
-    return send_file("etiquetas.pdf", as_attachment=True)
-
-# ---------------- VENTA ----------------
-@app.route('/vender/<codigo>')
-def vender(codigo):
-    uid = session['user_id']
-    conn = db()
-    c = conn.cursor()
-
-    c.execute("SELECT nombre,precio FROM productos WHERE codigo=? AND usuario_id=?", (codigo,uid))
-    producto = c.fetchone()
-
-    if not producto:
-        return "No existe"
-
-    nombre, precio = producto
-    fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
-
-    c.execute("INSERT INTO ventas VALUES (NULL,?,?,?,?)", (uid,nombre,precio,fecha))
-
-    c.execute("""
-    UPDATE productos 
-    SET cantidad = CASE WHEN cantidad > 0 THEN cantidad-1 ELSE 0 END
-    WHERE codigo=? AND usuario_id=?
-    """,(codigo,uid))
+    cursor.execute("INSERT INTO productos VALUES(NULL,?,?,?)",
+                   (e_nombre.get(), float(e_precio.get()), int(e_stock.get())))
 
     conn.commit()
     conn.close()
+    actualizar()
 
-    session["ultima"] = {"items":[{"nombre":nombre,"precio":precio}],"total":precio}
+def eliminar():
+    if not lista.get(ACTIVE): return
 
-    return redirect('/ticket')
+    pid = int(lista.get(ACTIVE).split("|")[0])
 
-# ---------------- HISTORIAL ----------------
-@app.route('/historial')
-def historial():
-    uid = session['user_id']
-    conn = db()
-    ventas = conn.execute("SELECT nombre,precio,fecha FROM ventas WHERE usuario_id=?", (uid,)).fetchall()
+    conn = sqlite3.connect("stock.db")
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM productos WHERE id=?", (pid,))
+    conn.commit()
     conn.close()
-    return render_template("historial.html", ventas=ventas)
+    actualizar()
 
-# ---------------- TICKET ----------------
-@app.route('/ticket')
-def ticket():
-    return render_template("ticket.html", venta=session.get("ultima"))
+def actualizar():
+    lista.delete(0, END)
 
-if __name__ == "__main__":
-    app.run(debug=True)
+    conn = sqlite3.connect("stock.db")
+    cursor = conn.cursor()
+
+    for p in cursor.execute("SELECT * FROM productos"):
+        lista.insert(END, f"{p[0]} | {p[1]} | ${p[2]} | Stock:{p[3]}")
+
+    conn.close()
+
+def vender():
+    if not lista.get(ACTIVE): return
+
+    pid = int(lista.get(ACTIVE).split("|")[0])
+    cant = int(e_cant.get())
+
+    conn = sqlite3.connect("stock.db")
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT stock FROM productos WHERE id=?", (pid,))
+    stock = cursor.fetchone()[0]
+
+    if cant > stock:
+        messagebox.showerror("Error", "Sin stock")
+        return
+
+    cursor.execute("UPDATE productos SET stock=? WHERE id=?", (stock-cant, pid))
+    cursor.execute("INSERT INTO ventas VALUES(NULL,?,?,?)",
+                   (pid, cant, datetime.now()))
+
+    conn.commit()
+    conn.close()
+    actualizar()
+
+# =========================
+# LOGIN UI
+# =========================
+crear_db()
+
+ventana_login = Tk()
+ventana_login.title("Login")
+ventana_login.geometry("300x200")
+ventana_login.config(bg=BG)
+
+Label(ventana_login, text="Usuario", bg=BG, fg="white").pack()
+entry_user = Entry(ventana_login)
+entry_user.pack()
+
+Label(ventana_login, text="Contraseña", bg=BG, fg="white").pack()
+entry_pass = Entry(ventana_login, show="*")
+entry_pass.pack()
+
+Button(ventana_login, text="Ingresar", command=login).pack(pady=10)
+
+ventana_login.mainloop()
